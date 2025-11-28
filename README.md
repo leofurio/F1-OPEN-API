@@ -3,7 +3,7 @@
 Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando l'API OpenF1.
 
 ## Descrizione breve
-- Seleziona Meeting → Session → Piloti → Giro 1 / Giro 2
+- Selezionare l'anno - Circuito → Session → Piloti → Giro 1 / Giro 2
 - Visualizza: tracciato (location), delta time, velocità, throttle, brake, gear
 - I dati vengono cacheati con `dcc.Store` per ridurre le chiamate API.
 
