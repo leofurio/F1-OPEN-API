@@ -14,7 +14,7 @@ pip install requests pandas dash plotly
 
 ## Avvio (Windows)
 ```powershell
-cd "c:\Users\l_o_w\F1 OPEN API"
+cd "c:\F1 OPEN API"
 python openf1_driver_comparison_meetings.py
 # apri http://127.0.0.1:8050
 ```
