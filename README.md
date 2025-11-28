@@ -9,22 +9,29 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 
 ## Dipendenze
 ```bash
-pip install requests pandas dash plotly numpy
+pip install requests pandas dash plotly
 ```
 
-## Avvio
-```bash
-cd "c:\F1 OPEN API"
+## Avvio (Windows)
+```powershell
+cd "c:\Users\l_o_w\F1 OPEN API"
 python openf1_driver_comparison_meetings.py
-# poi aprire http://127.0.0.1:8050
+# apri http://127.0.0.1:8050
 ```
 
 ## File principali
-- `openf1_driver_comparison_meetings.py` — applicazione Dash e helper per chiamate API
+- `openf1_driver_comparison_meetings.py` — applicazione Dash + helper API
 - `README.md` — questo file
 
-## Note importanti sul funzionamento dei grafici (mapping corrente)
-Nel file `openf1_driver_comparison_meetings.py` il callback che aggiorna i grafici dichiara gli Output in questo ordine:
+## Flusso rapido
+1. Scegli anno/meeting/sessione  
+2. Carica laps & drivers  
+3. Seleziona driver1, lap1, driver2, lap2  
+4. Visualizza 6 grafici: tracciato, delta, velocità, throttle, brake, gear
+
+## Nota importante: mapping dei grafici (ordine Output)
+Nel callback che aggiorna i grafici (`update_graphs`) gli Output sono dichiarati in questo ordine:
+
 1. `track-graph`
 2. `delta-graph`
 3. `speed-graph`
@@ -32,39 +39,34 @@ Nel file `openf1_driver_comparison_meetings.py` il callback che aggiorna i grafi
 5. `brake-graph`
 6. `gear-graph`
 
-Tuttavia la funzione ritorna i grafici in questo ordine (variabili generate nello script):
-- `speed_fig, track_fig, throttle_fig, brake_fig, gear_fig, delta_fig`
+La funzione `update_graphs` è stata aggiornata per restituire le figure nello stesso ordine, quindi il mapping è ora coerente:
 
-Quindi, con il codice così com'è, il contenuto dei grafici viene assegnato alle componenti Dash seguendo la posizione nella lista degli Output; il mapping effettivo diventa:
+- track-graph ← track_fig  
+- delta-graph ← delta_fig  
+- speed-graph ← speed_fig  
+- throttle-graph ← throttle_fig  
+- brake-graph ← brake_fig  
+- gear-graph ← gear_fig
 
-- track-graph ← speed_fig  
-- delta-graph ← track_fig  
-- speed-graph ← throttle_fig  
-- throttle-graph ← brake_fig  
-- brake-graph ← gear_fig  
-- gear-graph ← delta_fig
+Se in futuro modifichi l'ordine di ritorno delle figure, assicurati che la tupla restituita corrisponda esattamente all'ordine degli `Output`.
 
-Se preferisci mantenere l'ordine visivo attuale dei container Dash ma mostrare esplicitamente quale figura è generata da quale variabile, questo README documenta il comportamento corrente. Se vuoi invece correggere il comportamento così che ogni container mostri la figura con lo stesso nome logico, vedi la sezione Fix sotto.
-
-## Fix consigliato (opzionale)
-Per far corrispondere le figure alla dichiarazione degli Output (track → track_fig, delta → delta_fig, ...), modifica l'ultima riga del callback `update_graphs` in:
-
-```python
-// filepath: c:\Users\l_o_w\F1 OPEN API\openf1_driver_comparison_meetings.py
-# ...existing code...
-# return must match Output order: track, delta, speed, throttle, brake, gear
-return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
-# ...existing code...
-```
-
-Alternativa: modifica la lista `Output(...)` per riflettere l'ordine delle variabili ritornate. Qualsiasi modifica richiede che la posizione degli elementi di `Output` corrisponda esattamente alla tupla restituita dalla funzione.
+## Comportamento e dettagli tecnici
+- Se `date_end` di un lap è `None`, lo script stima un intervallo (default: +2 minuti) per tentare di recuperare telemetria.
+- Se le query con filtro `date>`/`date<` non restituiscono nulla, lo script può recuperare tutti i `car_data` per session+driver e filtrare lato client.
+- I timestamp sono normalizzati in "tempo relativo" (t_rel_s) rispetto al primo record del dataset.
 
 ## Troubleshooting rapido
-- "Nessun car_data trovato": verificare sessione/driver/giro e controllare i log (vengono stampati gli URL di query).
-- `date_end` mancante: lo script stima 2 minuti se `date_end` è `None`.
-- Callback errors sui duplicate outputs: assicurati che ogni id.prop compaia in una sola lista di Output o usa `allow_duplicate=True`.
+- "Nessun car_data trovato": la API potrebbe non avere telemetria per quella sessione/giro; controlla i log/URL di query stampati nel terminale.
+- Errori callback su output duplicati: assicurati che ogni id.prop compaia in una sola lista `Output` o usa `allow_duplicate=True` con attenzione.
+- Grafici vuoti: verifica che session_key, driver e lap siano tutti selezionati e che `laps-store` contenga dati.
 
-## Note finali
-- I timestamp sono gestiti in UTC così come forniti dall'API.
-- Per debug, guarda i print nel terminale dove avvii lo script (VS Code integrated terminal consigliato).
-- Se vuoi che aggiorni il README con più esempi o traduca sezioni in inglese, dimmi quali parti aggiungere.
+## Suggerimenti rapidi
+- Per debug, guarda il terminale dove avvii lo script (VS Code integrated terminal consigliato).
+- Per migliorare performance, estendi la cache o salva localmente i risultati API.
+
+## License
+Rispetta i termini d'uso dell'API OpenF1.
+
+---  
+Autore: Leonardo Furio  
+Ultima modifica: 28 novembre 2025

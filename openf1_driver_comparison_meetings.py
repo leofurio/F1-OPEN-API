@@ -705,7 +705,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
         delta_fig.update_layout(
             title=f"Delta time {name2_short} – {name1_short} lungo il giro",
             xaxis_title="Progresso giro (%)",
-            yaxis_title="Delta tempo (s, >0 = {name2_short} più lento)",
+            yaxis_title=f"Delta tempo (s, >0 = {name2_short} più lento)",
             template="plotly_white",
             shapes=[
                 dict(
@@ -841,7 +841,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
         template="plotly_white",
     )
 
-    return  speed_fig, track_fig, throttle_fig, brake_fig, gear_fig, delta_fig
+    # ritorna nell'ordine dichiarato dagli Output: track, delta, speed, throttle, brake, gear
+    return track_fig, speed_fig, delta_fig,  throttle_fig, brake_fig, gear_fig
 
 
 if __name__ == "__main__":
