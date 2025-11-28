@@ -23,6 +23,16 @@ python openf1_driver_comparison_meetings.py
 - `openf1_driver_comparison_meetings.py` — applicazione Dash + helper API
 - `README.md` — questo file
 
+
+```python
+// filepath: c:\Users\l_o_w\F1 OPEN API\openf1_driver_comparison_meetings.py
+# ...existing code...
+# return must match Output order: track, delta, speed, throttle, brake, gear
+return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
+# ...existing code...
+```
+
+Alternativa: modifica la lista `Output(...)` per riflettere l'ordine delle variabili ritornate. Qualsiasi modifica richiede che la posizione degli elementi di `Output` corrisponda esattamente alla tupla restituita dalla funzione.
 ## Flusso rapido
 1. Scegli anno/meeting/sessione  
 2. Carica laps & drivers  
@@ -56,6 +66,15 @@ Se in futuro modifichi l'ordine di ritorno delle figure, assicurati che la tupla
 - I timestamp sono normalizzati in "tempo relativo" (t_rel_s) rispetto al primo record del dataset.
 
 ## Troubleshooting rapido
+- "Nessun car_data trovato": verificare sessione/driver/giro e controllare i log (vengono stampati gli URL di query).
+- `date_end` mancante: lo script stima 2 minuti se `date_end` è `None`.
+- Callback errors sui duplicate outputs: assicurati che ogni id.prop compaia in una sola lista di Output o usa `allow_duplicate=True`.
+
+## Note finali
+- I timestamp sono gestiti in UTC così come forniti dall'API.
+- Per debug, guarda i print nel terminale dove avvii lo script (VS Code integrated terminal consigliato).
+- Se vuoi che aggiorni il README con più esempi o traduca sezioni in inglese, dimmi quali parti aggiungere.
+
 - "Nessun car_data trovato": la API potrebbe non avere telemetria per quella sessione/giro; controlla i log/URL di query stampati nel terminale.
 - Errori callback su output duplicati: assicurati che ogni id.prop compaia in una sola lista `Output` o usa `allow_duplicate=True` con attenzione.
 - Grafici vuoti: verifica che session_key, driver e lap siano tutti selezionati e che `laps-store` contenga dati.
