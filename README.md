@@ -1,193 +1,70 @@
 # OpenF1 Driver Comparison Dashboard
 
-Una dashboard interattiva Dash per comparare la telemetria di due piloti di Formula 1 su giri diversi, utilizzando l'API OpenF1.
+Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando l'API OpenF1.
 
-## 📋 Descrizione
+## Descrizione breve
+- Seleziona Meeting → Session → Piloti → Giro 1 / Giro 2
+- Visualizza: tracciato (location), delta time, velocità, throttle, brake, gear
+- I dati vengono cacheati con `dcc.Store` per ridurre le chiamate API.
 
-Questo progetto permette di:
-- Selezionare un anno e un Gran Premio (Meeting)
-- Scegliere una sessione (FP1, FP2, Qualifiche, Gara, Sprint)
-- Comparare due piloti su giri **diversi**
-- Visualizzare 4 grafici con telemetria in tempo reale:
-  - **Velocità** vs tempo relativo
-  - **Throttle** (acceleratore) vs tempo relativo
-  - **Brake** (freno) vs tempo relativo
-  - **Marcia (Gear)** vs tempo relativo
-
-## 🚀 Flusso dell'applicazione
-
-```
-Seleziona Anno
-    ↓
-Carica Meetings per quell'anno
-    ↓
-Seleziona Meeting (Gran Premio)
-    ↓
-Carica Sessions per quel meeting
-    ↓
-Seleziona Session (FP1, Qualifiche, Gara, ecc.)
-    ↓
-Carica Laps e Drivers per quella sessione
-    ↓
-Seleziona Pilota 1 e Pilota 2
-    ↓
-Seleziona Giro 1 e Giro 2 (indipendenti!)
-    ↓
-Visualizza 4 grafici comparativi
-```
-
-## 📦 Dipendenze
-
+## Dipendenze
 ```bash
-pip install requests pandas dash plotly
+pip install requests pandas dash plotly numpy
 ```
 
-## 🔧 Installazione e avvio
+## Avvio
+```bash
+cd "c:\F1 OPEN API"
+python openf1_driver_comparison_meetings.py
+# poi aprire http://127.0.0.1:8050
+```
 
-1. **Clona il repository** (o salva il file)
-   ```bash
-   cd "c:\Users\l_o_w\F1 OPEN API"
-   ```
+## File principali
+- `openf1_driver_comparison_meetings.py` — applicazione Dash e helper per chiamate API
+- `README.md` — questo file
 
-2. **Installa le dipendenze**
-   ```bash
-   pip install -r requirements.txt
-   ```
-   O manualmente:
-   ```bash
-   pip install requests pandas dash plotly
-   ```
+## Note importanti sul funzionamento dei grafici (mapping corrente)
+Nel file `openf1_driver_comparison_meetings.py` il callback che aggiorna i grafici dichiara gli Output in questo ordine:
+1. `track-graph`
+2. `delta-graph`
+3. `speed-graph`
+4. `throttle-graph`
+5. `brake-graph`
+6. `gear-graph`
 
-3. **Avvia l'app**
-   ```bash
-   python openf1_driver_comparison_meetings.py
-   ```
+Tuttavia la funzione ritorna i grafici in questo ordine (variabili generate nello script):
+- `speed_fig, track_fig, throttle_fig, brake_fig, gear_fig, delta_fig`
 
-4. **Apri il browser**
-   - Naviga a `http://127.0.0.1:8050`
+Quindi, con il codice così com'è, il contenuto dei grafici viene assegnato alle componenti Dash seguendo la posizione nella lista degli Output; il mapping effettivo diventa:
 
-## 📊 Funzionalità principali
+- track-graph ← speed_fig  
+- delta-graph ← track_fig  
+- speed-graph ← throttle_fig  
+- throttle-graph ← brake_fig  
+- brake-graph ← gear_fig  
+- gear-graph ← delta_fig
 
-### 1. **Selezione dinamica con Dropdown**
-- Ogni dropdown si aggiorna in base alle scelte precedenti
-- I giri disponibili cambiano quando selezioni un pilota diverso
-- Non devi ricaricare manualmente i dati
+Se preferisci mantenere l'ordine visivo attuale dei container Dash ma mostrare esplicitamente quale figura è generata da quale variabile, questo README documenta il comportamento corrente. Se vuoi invece correggere il comportamento così che ogni container mostri la figura con lo stesso nome logico, vedi la sezione Fix sotto.
 
-### 2. **Comparazione di giri indipendenti**
-- Puoi comparare il giro 45 del Pilota 1 con il giro 50 del Pilota 2
-- Ogni pilota ha il suo dropdown di selezione del giro
-- I grafici mostrano sempre entrambi i dataset sovrapposti
-
-### 3. **Telemetria multicanale**
-- **Velocità (km/h)**: trend di velocità nel corso del giro
-- **Throttle (%)**: utilizzo dell'acceleratore
-- **Brake**: pressione/valore del freno
-- **Marcia (Gear)**: sequenza di marce utilizzate
-
-### 4. **Store locale (cache)**
-- `meetings-store`: cache dei meeting caricati
-- `sessions-store`: cache delle sessioni
-- `laps-store`: cache dei giri (usato dai callback)
-- `drivers-store`: cache dei piloti (nomi, team)
-
-## 🏗️ Struttura del codice
-
-### Helper API (`fetch_*` functions)
-
-| Funzione | Descrizione |
-|----------|------------|
-| `fetch_meetings(year)` | Recupera i Gran Premi per un anno |
-| `fetch_sessions(meeting_key)` | Recupera le sessioni per un meeting |
-| `fetch_laps(session_key)` | Recupera i giri per una sessione |
-| `fetch_drivers(session_key)` | Recupera i piloti e i loro dati |
-| `fetch_car_data_for_lap()` | Recupera la telemetria per un giro specifico |
-
-### Callbacks Dash
-
-| Callback | Trigger | Output |
-|----------|---------|--------|
-| `load_meetings()` | Click bottone "Carica meetings" | Popola dropdown meeting |
-| `load_sessions()` | Cambio meeting | Popola dropdown session |
-| `load_laps_and_drivers()` | Cambio session | Popola dropdown piloti |
-| `update_lap_dropdowns()` | Cambio pilota 1 o 2 | Popola dropdown giri indipendenti |
-| `update_graphs()` | Cambio giro 1, giro 2 o pilota | Aggiorna i 4 grafici |
-
-## 🔗 API OpenF1
-
-Endpoint utilizzati:
-- `GET /meetings?year=2024` - List of Grand Prix
-- `GET /sessions?meeting_key=X` - List of sessions
-- `GET /laps?session_key=X` - List of laps
-- `GET /drivers?session_key=X` - Driver info
-- `GET /car_data?session_key=X&driver_number=Y&date>A&date<B` - Telemetry data
-
-**Base URL**: `https://api.openf1.org/v1`
-
-## ⚙️ Dettagli tecnici
-
-### Gestione del timestamp mancante
-L'API OpenF1 a volte non fornisce `date_end` per i giri.  
-**Soluzione**: Se `date_end` è `None`, si stima automaticamente un intervallo di **2 minuti** (durata tipica di un giro F1).
+## Fix consigliato (opzionale)
+Per far corrispondere le figure alla dichiarazione degli Output (track → track_fig, delta → delta_fig, ...), modifica l'ultima riga del callback `update_graphs` in:
 
 ```python
-if not date_end:
-    from datetime import timedelta
-    start_dt = pd.to_datetime(date_start)
-    date_end = (start_dt + timedelta(minutes=2)).isoformat()
+// filepath: c:\Users\l_o_w\F1 OPEN API\openf1_driver_comparison_meetings.py
+# ...existing code...
+# return must match Output order: track, delta, speed, throttle, brake, gear
+return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
+# ...existing code...
 ```
 
-### Normalizzazione del tempo relativo
-I dati grezzi hanno timestamp assoluti. Vengono normalizzati a "tempo relativo da inizio giro" (in secondi):
+Alternativa: modifica la lista `Output(...)` per riflettere l'ordine delle variabili ritornate. Qualsiasi modifica richiede che la posizione degli elementi di `Output` corrisponda esattamente alla tupla restituita dalla funzione.
 
-```python
-t0 = df["date"].min()
-df["t_rel_s"] = (df["date"] - t0).dt.total_seconds()
-```
+## Troubleshooting rapido
+- "Nessun car_data trovato": verificare sessione/driver/giro e controllare i log (vengono stampati gli URL di query).
+- `date_end` mancante: lo script stima 2 minuti se `date_end` è `None`.
+- Callback errors sui duplicate outputs: assicurati che ogni id.prop compaia in una sola lista di Output o usa `allow_duplicate=True`.
 
-Così i grafici iniziano sempre da `t=0` indipendentemente dall'orario reale.
-
-## 📈 Esempi di utilizzo
-
-### Comparare due giri di Max Verstappen
-1. Seleziona: 2024 → Monaco → Qualifiche
-2. Pilota 1: Max Verstappen (Car 1) → Giro 14
-3. Pilota 2: Max Verstappen (Car 1) → Giro 16
-4. Osserva come varia la velocità max, throttle, frenata tra due tentativi di qualifica
-
-### Comparare due piloti su giri diversi
-1. Seleziona: 2024 → Monza → Gara
-2. Pilota 1: Charles Leclerc → Giro 35
-3. Pilota 2: Carlos Sainz → Giro 42
-4. Vedi le differenze nel passo gara e nella gestione dei freni
-
-## 🐛 Troubleshooting
-
-| Problema | Soluzione |
-|----------|----------|
-| "Nessun car_data trovato" | L'API OpenF1 potrebbe non avere dati per quella sessione |
-| Dropdown vuoti dopo selezione | Aspetta il caricamento della pagina, a volte ci vogliono secondi |
-| Errore timeout | La connessione API è lenta, prova di nuovo o usa una sessione più recente |
-| Grafici non si aggiornano | Verifica che session, piloti e giri siano tutti selezionati |
-
-## 📝 Note
-
-- **Intervallo di tempo**: L'app usa il `session_key` per identificare univocamente una sessione F1
-- **Nomi piloti**: Vengono recuperati dall'endpoint `/drivers` con nome completo e team
-- **Performance**: I dati vengono cacheati nei `dcc.Store` per ridurre le chiamate API
-- **Timezone**: Tutti i timestamp sono in UTC (come fornito da OpenF1)
-
-## 🎨 Personalizzazioni possibili
-
-- Aggiungere più grafici (RPM, DRS, ecc.)
-- Importare i dati in CSV per analisi offline
-- Aggiungere filtri per circuito specifico
-- Calcolare delta time tra i due giri
-
-## 📄 License
-
-Questo progetto utilizza l'API OpenF1, che è open source. Rispetta i termini di utilizzo.
-
----
-
-**Autore**: Leonardo Furio
-**Ultima modifica**: 28 novembre 2025
+## Note finali
+- I timestamp sono gestiti in UTC così come forniti dall'API.
+- Per debug, guarda i print nel terminale dove avvii lo script (VS Code integrated terminal consigliato).
+- Se vuoi che aggiorni il README con più esempi o traduca sezioni in inglese, dimmi quali parti aggiungere.
