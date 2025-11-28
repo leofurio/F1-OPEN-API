@@ -34,7 +34,7 @@ return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
 
 Alternativa: modifica la lista `Output(...)` per riflettere l'ordine delle variabili ritornate. Qualsiasi modifica richiede che la posizione degli elementi di `Output` corrisponda esattamente alla tupla restituita dalla funzione.
 ## Flusso rapido
-1. Scegli anno/meeting/sessione  
+1. Scegli anno/circuito/sessione  
 2. Carica laps & drivers  
 3. Seleziona driver1, lap1, driver2, lap2  
 4. Visualizza 6 grafici: tracciato, delta, velocità, throttle, brake, gear
