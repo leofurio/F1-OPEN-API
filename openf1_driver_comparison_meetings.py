@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from urllib.parse import urlencode
 
-from dash import Dash, dcc, html, Input, Output, State
+from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
 import plotly.graph_objects as go
 import numpy as np  # <-- per delta time
 
@@ -328,6 +328,7 @@ app.layout = html.Div(
         dcc.Store(id="sessions-store"),
         dcc.Store(id="laps-store"),
         dcc.Store(id="drivers-store"),
+        dcc.Store(id="selected-time-store"),
 
         html.Hr(),
 
@@ -534,6 +535,39 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
     return lap1_options, lap1_val, lap2_options, lap2_val
 
 
+# 3ter) Memorizza il tempo relativo selezionato da un grafico
+@app.callback(
+    Output("selected-time-store", "data"),
+    inputs=[
+        Input("speed-graph", "hoverData"),
+        Input("speed-graph", "clickData"),
+    ],
+)
+def update_selected_time(hover_data, click_data):
+    ctx = callback_context
+
+    # Precedenza al click rispetto all'hover
+    source = None
+    if ctx.triggered:
+        prop_id = ctx.triggered[0]["prop_id"]
+        if "clickData" in prop_id and click_data:
+            source = click_data
+        elif "hoverData" in prop_id and hover_data:
+            source = hover_data
+
+    if not source or "points" not in source or not source["points"]:
+        return no_update
+
+    x_val = source["points"][0].get("x")
+    if x_val is None:
+        return no_update
+
+    try:
+        return float(x_val)
+    except (TypeError, ValueError):
+        return no_update
+
+
 # 4) Update grafici (track + delta + telemetria)
 @app.callback(
     output=[
@@ -554,10 +588,11 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
     state=[
         State("laps-store", "data"),
         State("drivers-store", "data"),
+        State("selected-time-store", "data"),
     ],
     prevent_initial_call=False,
 )
-def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_data, drivers_data):
+def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_data, drivers_data, selected_time):
     empty_fig = go.Figure()
     empty_fig.update_layout(
         title="Seleziona sessione, piloti e giri.",
@@ -659,6 +694,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
     elif df2.empty and not df1.empty:
         note = f" – Nessun dato car_data per {name2_short}"
 
+    selected_time_str = f" – t selezionato: {selected_time:.2f}s" if selected_time is not None else ""
+
     # -------- TRACK FIG (pista x-y) --------
     track_fig = go.Figure()
     if not loc1.empty and loc1["x"].notna().any() and loc1["y"].notna().any():
@@ -748,7 +785,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
             )
         )
     speed_fig.update_layout(
-        title=f"Velocità vs tempo relativo{title_suffix}{note}",
+        title=f"Velocità vs tempo relativo{title_suffix}{note}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Velocità (km/h)",
         template="plotly_white",
@@ -777,7 +814,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
             )
         )
     throttle_fig.update_layout(
-        title=f"Throttle vs tempo relativo{title_suffix}{note}",
+        title=f"Throttle vs tempo relativo{title_suffix}{note}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Throttle (%)",
         template="plotly_white",
@@ -806,7 +843,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
             )
         )
     brake_fig.update_layout(
-        title=f"Brake vs tempo relativo{title_suffix}{note}",
+        title=f"Brake vs tempo relativo{title_suffix}{note}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Brake (valore grezzo / pressione)",
         template="plotly_white",
@@ -835,14 +872,58 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
             )
         )
     gear_fig.update_layout(
-        title=f"Marcia (gear) vs tempo relativo{title_suffix}{note}",
+        title=f"Marcia (gear) vs tempo relativo{title_suffix}{note}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Marcia inserita",
         template="plotly_white",
     )
 
+    if selected_time is not None:
+        vertical_line = dict(
+            type="line",
+            xref="x",
+            x0=selected_time,
+            x1=selected_time,
+            yref="paper",
+            y0=0,
+            y1=1,
+            line=dict(color="black", dash="dot", width=1.5),
+        )
+
+        def apply_vertical(fig: go.Figure):
+            shapes = list(fig.layout.shapes) if fig.layout.shapes else []
+            shapes.append(vertical_line)
+            fig.update_layout(shapes=shapes)
+
+        apply_vertical(speed_fig)
+        apply_vertical(throttle_fig)
+        apply_vertical(brake_fig)
+        apply_vertical(gear_fig)
+
+        def add_track_marker(loc_df: pd.DataFrame, color: str, label: str):
+            if loc_df.empty or "t_rel_s" not in loc_df:
+                return
+            loc_df_valid = loc_df.dropna(subset=["t_rel_s", "x", "y"])
+            if loc_df_valid.empty:
+                return
+            nearest_idx = (loc_df_valid["t_rel_s"] - selected_time).abs().idxmin()
+            row = loc_df_valid.loc[nearest_idx]
+            track_fig.add_trace(
+                go.Scatter(
+                    x=[row["x"]],
+                    y=[row["y"]],
+                    mode="markers",
+                    name=f"{label} @ {selected_time:.2f}s",
+                    marker=dict(color=color, size=10, symbol="x"),
+                    showlegend=True,
+                )
+            )
+
+        add_track_marker(loc1, COLOR1, name1_short)
+        add_track_marker(loc2, COLOR2, name2_short)
+
     # ritorna nell'ordine dichiarato dagli Output: track, delta, speed, throttle, brake, gear
-    return track_fig, speed_fig, delta_fig,  throttle_fig, brake_fig, gear_fig
+    return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
 
 
 if __name__ == "__main__":
