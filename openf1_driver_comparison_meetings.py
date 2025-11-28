@@ -247,7 +247,7 @@ app.layout = html.Div(
     style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
     children=[
         html.H1("OpenF1 – Driver Comparison Dashboard"),
-        html.P("Flusso corretto: Meeting → Session → Drivers → Lap → Telemetria + Location + Delta time."),
+        html.P("Flusso corretto: Circuito → Session → Drivers → Lap → Telemetria + Location + Delta time."),
 
         html.Hr(),
 
@@ -266,7 +266,7 @@ app.layout = html.Div(
                             style={"width": "100%"},
                         ),
                         html.Button(
-                            "Carica meetings",
+                            "Carica Circuiti",
                             id="load-meetings-btn",
                             n_clicks=0,
                             style={"marginTop": "8px"},
@@ -280,7 +280,7 @@ app.layout = html.Div(
                 html.Div(
                     style={"flex": "2"},
                     children=[
-                        html.Label("Meeting (Gran Premio)"),
+                        html.Label("Circuito (Gran Premio)"),
                         dcc.Dropdown(id="meeting-dropdown", options=[], value=None),
                     ],
                 ),
@@ -351,7 +351,7 @@ app.layout = html.Div(
 # Callbacks
 # =========================
 
-# 1) Carica meetings per anno
+# 1) Carica circuiti per anno
 @app.callback(
     output=[
         Output("meetings-store", "data"),
@@ -367,10 +367,10 @@ def load_meetings(n_clicks, year):
     try:
         df = fetch_meetings(year=int(year)) if year else fetch_meetings()
     except Exception as e:
-        return None, [], None, f"❌ Errore nel caricamento dei meetings: {e}"
+        return None, [], None, f"❌ Errore nel caricamento dei circuiti: {e}"
 
     if df.empty:
-        return None, [], None, "⚠ Nessun meeting trovato per questo anno."
+        return None, [], None, "⚠ Nessun circuito trovato per questo anno."
 
     def make_label(row):
         y = row.get("year")
@@ -384,12 +384,12 @@ def load_meetings(n_clicks, year):
         if pd.notna(row["meeting_key"])
     ]
     value = options[0]["value"] if options else None
-    status = f"✅ Meetings caricati: {len(options)}"
+    status = f"✅ Circuiti caricati: {len(options)}"
 
     return df.to_dict("records"), options, value, status
 
 
-# 2) Quando cambio meeting → carica sessions
+# 2) Quando cambio circuito → carica sessions
 @app.callback(
     output=[
         Output("sessions-store", "data"),
@@ -402,15 +402,15 @@ def load_meetings(n_clicks, year):
 )
 def load_sessions(meeting_key, meetings_data):
     if not meeting_key:
-        return None, [], None, "Seleziona un meeting."
+        return None, [], None, "Seleziona un circuito."
 
     try:
         df_sessions = fetch_sessions(int(meeting_key))
     except Exception as e:
-        return None, [], None, f"❌ Errore nel caricamento delle sessions: {e}"
+        return None, [], None, f"❌ Errore nel caricamento delle sessioni per il circuito: {e}"
 
     if df_sessions.empty:
-        return None, [], None, "⚠ Nessuna sessione trovata per questo meeting."
+        return None, [], None, "⚠ Nessuna sessione trovata per questo circuito."
 
     options = [
         {
@@ -847,4 +847,3 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, laps_
 
 if __name__ == "__main__":
     app.run(debug=True)
-
