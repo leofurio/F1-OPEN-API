@@ -23,31 +23,6 @@ python openf1_driver_comparison_meetings.py
 - `openf1_driver_comparison_meetings.py` — applicazione Dash e helper per chiamate API
 - `README.md` — questo file
 
-## Note importanti sul funzionamento dei grafici (mapping corrente)
-Nel file `openf1_driver_comparison_meetings.py` il callback che aggiorna i grafici dichiara gli Output in questo ordine:
-1. `track-graph`
-2. `delta-graph`
-3. `speed-graph`
-4. `throttle-graph`
-5. `brake-graph`
-6. `gear-graph`
-
-Tuttavia la funzione ritorna i grafici in questo ordine (variabili generate nello script):
-- `speed_fig, track_fig, throttle_fig, brake_fig, gear_fig, delta_fig`
-
-Quindi, con il codice così com'è, il contenuto dei grafici viene assegnato alle componenti Dash seguendo la posizione nella lista degli Output; il mapping effettivo diventa:
-
-- track-graph ← speed_fig  
-- delta-graph ← track_fig  
-- speed-graph ← throttle_fig  
-- throttle-graph ← brake_fig  
-- brake-graph ← gear_fig  
-- gear-graph ← delta_fig
-
-Se preferisci mantenere l'ordine visivo attuale dei container Dash ma mostrare esplicitamente quale figura è generata da quale variabile, questo README documenta il comportamento corrente. Se vuoi invece correggere il comportamento così che ogni container mostri la figura con lo stesso nome logico, vedi la sezione Fix sotto.
-
-## Fix consigliato (opzionale)
-Per far corrispondere le figure alla dichiarazione degli Output (track → track_fig, delta → delta_fig, ...), modifica l'ultima riga del callback `update_graphs` in:
 
 ```python
 // filepath: c:\Users\l_o_w\F1 OPEN API\openf1_driver_comparison_meetings.py
