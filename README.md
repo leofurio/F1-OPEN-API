@@ -3,7 +3,7 @@
 Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando l'API OpenF1.
 
 ## Descrizione breve
-- Seleziona Meeting → Session → Piloti → Giro 1 / Giro 2
+- Selezionare l'anno - Circuito → Session → Piloti → Giro 1 / Giro 2
 - Visualizza: tracciato (location), delta time, velocità, throttle, brake, gear
 - I dati vengono cacheati con `dcc.Store` per ridurre le chiamate API.
 
@@ -14,7 +14,7 @@ pip install requests pandas dash plotly
 
 ## Avvio (Windows)
 ```powershell
-cd "c:\Users\l_o_w\F1 OPEN API"
+cd "c:\F1 OPEN API"
 python openf1_driver_comparison_meetings.py
 # apri http://127.0.0.1:8050
 ```
@@ -34,7 +34,7 @@ return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
 
 Alternativa: modifica la lista `Output(...)` per riflettere l'ordine delle variabili ritornate. Qualsiasi modifica richiede che la posizione degli elementi di `Output` corrisponda esattamente alla tupla restituita dalla funzione.
 ## Flusso rapido
-1. Scegli anno/meeting/sessione  
+1. Scegli anno/circuito/sessione  
 2. Carica laps & drivers  
 3. Seleziona driver1, lap1, driver2, lap2  
 4. Visualizza 6 grafici: tracciato, delta, velocità, throttle, brake, gear

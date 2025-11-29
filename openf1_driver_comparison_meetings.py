@@ -535,49 +535,6 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
     return lap1_options, lap1_val, lap2_options, lap2_val
 
 
-# 3ter) Memorizza il tempo relativo selezionato da un grafico
-@app.callback(
-    Output("selected-time-store", "data"),
-    inputs=[
-        Input("speed-graph", "hoverData"),
-        Input("speed-graph", "clickData"),
-        Input("session-dropdown", "value"),  # reset quando cambi sessione
-    ],
-)
-def update_selected_time(hover_data, click_data, session_key):
-    ctx = callback_context
-
-    if not ctx.triggered:
-        return no_update
-
-    prop_id = ctx.triggered[0]["prop_id"]
-    
-    # Se è stato il cambio di sessione a triggerare, resetta
-    if "session-dropdown" in prop_id:
-        return None
-
-    # Precedenza al click rispetto all'hover
-    source = None
-    if "clickData" in prop_id and click_data:
-        source = click_data
-    elif "hoverData" in prop_id and hover_data:
-        source = hover_data
-
-    if not source or "points" not in source or not source["points"]:
-        return no_update
-
-    x_val = source["points"][0].get("x")
-    if x_val is None:
-        return no_update
-
-    try:
-        val = float(x_val)
-        print(f"🎯 Selected time: {val:.2f}s")
-        return val
-    except (TypeError, ValueError):
-        return no_update
-
-
 # 4) Update grafici (track + delta + telemetria)
 @app.callback(
     output=[
