@@ -1,6 +1,7 @@
 import pandas as pd
 from dash import Input, Output, State, callback
 from api.openf1 import fetch_laps, fetch_drivers
+from utils.telemetry import fmt_duration, lap_duration_seconds_from_row
 
 
 @callback(
@@ -89,16 +90,25 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
 
     df_laps = pd.DataFrame(laps_data)
 
-    laps1 = sorted(
-        df_laps[df_laps["driver_number"] == driver1]["lap_number"].dropna().unique()
-    ) if driver1 else []
-    lap1_options = [{"label": f"Lap {int(l)}", "value": int(l)} for l in laps1]
-    lap1_val = int(laps1[-1]) if laps1 else None
+    def build_options_for(driver):
+        if not driver:
+            return [], None
+        rows = df_laps[df_laps["driver_number"] == int(driver)].dropna(subset=["lap_number"])
+        if rows.empty:
+            return [], None
+        opts = []
+        # ordina per lap_number e crea label con durata
+        for _, r in rows.sort_values("lap_number").iterrows():
+            lap_num = int(r["lap_number"])
+            # estrai durata dal row (preferisce il campo fornito dalle API)
+            dur_s = lap_duration_seconds_from_row(r, pd.DataFrame())
+            dur_label = fmt_duration(dur_s)
+            label = f"Lap {lap_num} — {dur_label}"
+            opts.append({"label": label, "value": lap_num})
+        val = opts[-1]["value"] if opts else None
+        return opts, val
 
-    laps2 = sorted(
-        df_laps[df_laps["driver_number"] == driver2]["lap_number"].dropna().unique()
-    ) if driver2 else []
-    lap2_options = [{"label": f"Lap {int(l)}", "value": int(l)} for l in laps2]
-    lap2_val = int(laps2[-1]) if laps2 else None
+    lap1_options, lap1_val = build_options_for(driver1)
+    lap2_options, lap2_val = build_options_for(driver2)
 
     return lap1_options, lap1_val, lap2_options, lap2_val

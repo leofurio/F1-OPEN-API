@@ -12,17 +12,19 @@ from config import COLOR1, COLOR2
 
 
 def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    """Helper: formatta etichetta pilota."""
-    if not df_drivers.empty:
-        row = df_drivers[df_drivers["driver_number"] == num]
-        if not row.empty:
-            row = row.iloc[0]
-            full_name = row.get("full_name") or row.get("name_acronym") or ""
-            team = row.get("team_name") or ""
-            if full_name and team:
-                return f"#{int(num)} – {full_name} ({team})"
-            elif full_name:
-                return f"#{int(num)} – {full_name}"
+    """Format a readable label for a driver."""
+    if df_drivers.empty:
+        return f"Driver #{int(num)}"
+    row = df_drivers[df_drivers["driver_number"] == num]
+    if row.empty:
+        return f"Driver #{int(num)}"
+    row = row.iloc[0]
+    full_name = row.get("full_name") or row.get("name_acronym") or ""
+    team = row.get("team_name") or ""
+    if full_name and team:
+        return f"#{int(num)} - {full_name} ({team})"
+    if full_name:
+        return f"#{int(num)} - {full_name}"
     return f"Driver #{int(num)}"
 
 
@@ -49,13 +51,13 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
     ],
     prevent_initial_call=False,
 )
-def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, 
+def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
                   laps_data, drivers_data, selected_time):
     """Aggiorna tutti i 6 grafici."""
-    
+
     empty_fig = go.Figure()
     empty_fig.update_layout(
-        title="Seleziona sessione, piloti e giri.",
+        title="📊 Seleziona sessione, piloti e giri.",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="",
         template="plotly_white",
@@ -63,7 +65,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
 
     track_fig = go.Figure()
     track_fig.update_layout(
-        title="Tracciato non disponibile",
+        title="🗺️ Tracciato non disponibile",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -71,7 +73,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
 
     delta_fig = go.Figure()
     delta_fig.update_layout(
-        title="Delta time non disponibile",
+        title="⏱️ Delta tempo non disponibile",
         xaxis_title="Progresso giro (%)",
         yaxis_title="Delta tempo (s)",
         template="plotly_white",
@@ -102,7 +104,6 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
         df2 = fetch_car_data_for_lap(int(session_key), int(driver2), lap2_row)
         loc1 = fetch_location_for_lap(int(session_key), int(driver1), lap1_row)
         loc2 = fetch_location_for_lap(int(session_key), int(driver2), lap2_row)
-
     except Exception as e:
         empty_fig.update_layout(title=f"Errore: {e}")
         return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig
@@ -119,11 +120,12 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     dur1_str = fmt_duration(dur1_s)
     dur2_str = fmt_duration(dur2_s)
 
-    name1 = f"{name1_short} – Lap {lap1_number} (durata: {dur1_str})"
-    name2 = f"{name2_short} – Lap {lap2_number} (durata: {dur2_str})"
+    # Nomi per la legenda con a capo prima del tempo giro
+    name1 = f"{name1_short}<br>Lap {lap1_number} (durata: {dur1_str})"
+    name2 = f"{name2_short}<br>Lap {lap2_number} (durata: {dur2_str})"
 
-    title_suffix = f" – {name1_short} Lap {lap1_number} vs {name2_short} Lap {lap2_number}"
-    selected_time_str = f" – t: {selected_time:.2f}s" if selected_time is not None else ""
+    title_suffix = f" · {name1_short} Lap {lap1_number} vs {name2_short} Lap {lap2_number}"
+    selected_time_str = f" · t: {selected_time:.2f}s" if selected_time is not None else ""
 
     # -------- TRACK --------
     track_fig = go.Figure()
@@ -132,7 +134,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     if not loc2.empty and loc2["x"].notna().any():
         track_fig.add_trace(go.Scatter(x=loc2["x"], y=loc2["y"], mode="lines", name=name2, line=dict(color=COLOR2)))
     track_fig.update_layout(
-        title=f"Tracciato – {name1_short} vs {name2_short}",
+        title=f"🗺️ Tracciato · {name1_short} vs {name2_short}",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -143,12 +145,12 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     progress, delta_t = compute_delta_time(df1, df2, n_points=200)
     delta_fig = go.Figure()
     if progress is not None:
-        delta_fig.add_trace(go.Scatter(x=progress * 100.0, y=delta_t, mode="lines", 
-                                       name=f"{name2_short} – {name1_short}", line=dict(color="#2ca02c")))
+        delta_fig.add_trace(go.Scatter(x=progress * 100.0, y=delta_t, mode="lines",
+                                       name=f"{name2_short} vs {name1_short}", line=dict(color="#2ca02c")))
         delta_fig.update_layout(
-            title=f"Delta time {name2_short} – {name1_short}",
+            title=f"⏱️ Delta tempo · {name2_short} vs {name1_short}",
             xaxis_title="Progresso giro (%)",
-            yaxis_title=f"Delta (s, >0 = {name2_short} più lento)",
+            yaxis_title=f"Delta (s, >0 = {name2_short} piu lento)",
             template="plotly_white",
             shapes=[dict(type="line", xref="paper", x0=0, x1=1, y0=0, y1=0, line=dict(dash="dash", width=1))],
         )
@@ -156,28 +158,28 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     # -------- SPEED --------
     speed_fig = go.Figure()
     if not df1.empty:
-        speed_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["speed"], mode="lines", 
+        speed_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["speed"], mode="lines",
                                        name=name1, line=dict(color=COLOR1)))
     if not df2.empty:
-        speed_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["speed"], mode="lines", 
+        speed_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["speed"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     speed_fig.update_layout(
-        title=f"Velocità{title_suffix}{selected_time_str}",
+        title=f"🏎️💨 Velocita{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
-        yaxis_title="Velocità (km/h)",
+        yaxis_title="Velocita (km/h)",
         template="plotly_white",
     )
 
     # -------- THROTTLE --------
     throttle_fig = go.Figure()
     if not df1.empty:
-        throttle_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["throttle"], mode="lines", 
+        throttle_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["throttle"], mode="lines",
                                           name=name1, line=dict(color=COLOR1)))
     if not df2.empty:
-        throttle_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["throttle"], mode="lines", 
+        throttle_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["throttle"], mode="lines",
                                           name=name2, line=dict(color=COLOR2)))
     throttle_fig.update_layout(
-        title=f"Throttle{title_suffix}{selected_time_str}",
+        title=f"⚡ Throttle{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Throttle (%)",
         template="plotly_white",
@@ -186,13 +188,13 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     # -------- BRAKE --------
     brake_fig = go.Figure()
     if not df1.empty:
-        brake_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["brake"], mode="lines", 
+        brake_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["brake"], mode="lines",
                                        name=name1, line=dict(color=COLOR1)))
     if not df2.empty:
-        brake_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["brake"], mode="lines", 
+        brake_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["brake"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     brake_fig.update_layout(
-        title=f"Brake{title_suffix}{selected_time_str}",
+        title=f"🛑 Brake{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Brake",
         template="plotly_white",
@@ -201,13 +203,13 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
     # -------- GEAR --------
     gear_fig = go.Figure()
     if not df1.empty:
-        gear_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["n_gear"], mode="lines", 
+        gear_fig.add_trace(go.Scatter(x=df1["t_rel_s"], y=df1["n_gear"], mode="lines",
                                       name=name1, line=dict(color=COLOR1)))
     if not df2.empty:
-        gear_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["n_gear"], mode="lines", 
+        gear_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["n_gear"], mode="lines",
                                       name=name2, line=dict(color=COLOR2)))
     gear_fig.update_layout(
-        title=f"Marcia{title_suffix}{selected_time_str}",
+        title=f"⚙️ Marcia{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Marcia",
         template="plotly_white",
@@ -240,9 +242,14 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
             idx = (loc_df_valid["t_rel_s"] - selected_time).abs().idxmin()
             row = loc_df_valid.loc[idx]
             track_fig.add_trace(
-                go.Scatter(x=[row["x"]], y=[row["y"]], mode="markers", 
-                          name=f"{label} @ {selected_time:.2f}s",
-                          marker=dict(color=color, size=10, symbol="x"), showlegend=True)
+                go.Scatter(
+                    x=[row["x"]],
+                    y=[row["y"]],
+                    mode="markers",
+                    name=f"{label} @ {selected_time:.2f}s",
+                    marker=dict(color=color, size=10, symbol="x"),
+                    showlegend=True,
+                )
             )
 
         add_marker(loc1, COLOR1, name1_short)

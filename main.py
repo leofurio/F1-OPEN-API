@@ -5,8 +5,11 @@ from components.layout import create_layout
 import callbacks.meetings
 import callbacks.drivers
 import callbacks.graphs
+import callbacks.cache
+import callbacks.graph_order
 
-app = Dash(__name__)
+# Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente
+app = Dash(__name__, suppress_callback_exceptions=True)
 app.title = "OpenF1 – Driver Comparison"
 app.layout = create_layout()
 
