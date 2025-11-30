@@ -128,21 +128,30 @@ def create_layout():
 
             html.Hr(),
 
-            # Contenitore grafici (i grafici vengono ordinati dinamicamente)
-            html.Div(
-                id="graphs-container",
-                style={"display": "flex", "flexDirection": "column", "gap": "20px"},
-                # Seed iniziale per evitare errori di validazione prima del callback
-                children=[
-                    html.Div(
-                        [
-                            html.H3(GRAPH_TITLES.get(graph_id, graph_id), style={"marginBottom": "6px"}),
-                            dcc.Graph(id=graph_id),
-                        ],
-                        style={"display": "flex", "flexDirection": "column", "gap": "6px"},
-                    )
-                    for graph_id in DEFAULT_GRAPH_ORDER
-                ],
+            # Contenitore grafici con spinner durante l'update
+            dcc.Loading(
+                id="graphs-loading",
+                type="circle",
+                color="#555",
+                children=html.Div(
+                    id="graphs-container",
+                    style={"display": "flex", "flexDirection": "column", "gap": "20px"},
+                    # Seed iniziale per evitare errori di validazione prima del callback
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(GRAPH_TITLES.get(graph_id, graph_id), style={"marginBottom": "6px"}),
+                                dcc.Loading(
+                                    type="circle",
+                                    color="#555",
+                                    children=dcc.Graph(id=graph_id),
+                                ),
+                            ],
+                            style={"display": "flex", "flexDirection": "column", "gap": "6px"},
+                        )
+                        for graph_id in DEFAULT_GRAPH_ORDER
+                    ],
+                ),
             ),
         ],
     )

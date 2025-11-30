@@ -43,16 +43,16 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
         Input("lap1-dropdown", "value"),
         Input("driver2-dropdown", "value"),
         Input("lap2-dropdown", "value"),
+        Input("selected-time-store", "data"),  # click/hover su speed-graph
     ],
     state=[
         State("laps-store", "data"),
         State("drivers-store", "data"),
-        State("selected-time-store", "data"),
     ],
     prevent_initial_call=False,
 )
-def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
-                  laps_data, drivers_data, selected_time):
+def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selected_time,
+                  laps_data, drivers_data):
     """Aggiorna tutti i 6 grafici."""
 
     empty_fig = go.Figure()
@@ -214,6 +214,40 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number,
         yaxis_title="Marcia",
         template="plotly_white",
     )
+
+    # Linee verticali a fine giro per i due piloti
+    end_lines = []
+    if dur1_s is not None:
+        end_lines.append(
+            dict(
+                type="line",
+                xref="x",
+                x0=dur1_s,
+                x1=dur1_s,
+                yref="paper",
+                y0=0,
+                y1=1,
+                line=dict(color=COLOR1, dash="dash", width=1.2),
+            )
+        )
+    if dur2_s is not None:
+        end_lines.append(
+            dict(
+                type="line",
+                xref="x",
+                x0=dur2_s,
+                x1=dur2_s,
+                yref="paper",
+                y0=0,
+                y1=1,
+                line=dict(color=COLOR2, dash="dash", width=1.2),
+            )
+        )
+
+    for fig in [speed_fig, throttle_fig, brake_fig, gear_fig]:
+        base_shapes = list(fig.layout.shapes) if fig.layout.shapes else []
+        base_shapes.extend(end_lines)
+        fig.update_layout(shapes=base_shapes)
 
     # Aggiungi linea verticale e marcatori se selected_time
     if selected_time is not None:

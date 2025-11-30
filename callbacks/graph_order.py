@@ -78,7 +78,11 @@ def render_graphs_container(order):
             html.Div(
                 [
                     html.H3(title, style={"marginBottom": "6px"}),
-                    dcc.Graph(id=graph_id),
+                    dcc.Loading(
+                        type="circle",
+                        color="#555",
+                        children=dcc.Graph(id=graph_id),
+                    ),
                 ],
                 style={"display": "flex", "flexDirection": "column", "gap": "6px"},
             )
