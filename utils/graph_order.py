@@ -8,7 +8,7 @@ DEFAULT_GRAPH_ORDER = [
 ]
 
 GRAPH_TITLES = {
-    "track-graph": "🗺️ Tracciato",
+    "track-graph": "🗺️ Tracciato GPS",
     "delta-graph": "⏱️ Delta Tempo",
     "speed-graph": "🏎️💨 Velocità",
     "throttle-graph": "⚡ Throttle",

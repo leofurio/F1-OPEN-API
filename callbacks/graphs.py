@@ -65,7 +65,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     track_fig = go.Figure()
     track_fig.update_layout(
-        title="Tracciato non disponibile",
+        title="Tracciato GPS non disponibile",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -134,7 +134,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     if not loc2.empty and loc2["x"].notna().any():
         track_fig.add_trace(go.Scatter(x=loc2["x"], y=loc2["y"], mode="lines", name=name2, line=dict(color=COLOR2)))
     track_fig.update_layout(
-        title=f"Tracciato · {name1_short} vs {name2_short}",
+        title=f"Tracciato GPS · {name1_short} vs {name2_short}",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
