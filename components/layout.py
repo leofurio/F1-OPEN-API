@@ -128,6 +128,14 @@ def create_layout():
 
             html.Hr(),
 
+            html.Div(
+                style={"marginBottom": "12px"},
+                children=[
+                    html.Button("Stampa PDF", id="print-btn", n_clicks=0),
+                ],
+            ),
+            html.Div(id="print-trigger", style={"display": "none"}),
+
             # Contenitore grafici con spinner durante l'update
             dcc.Loading(
                 id="graphs-loading",

@@ -6,11 +6,12 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 
 ## Cosa fa
 - Flusso: Anno → Circuito → Sessione → Pilota/Giro 1 e 2 → Grafici.
-- Sei grafici sincronizzati: Tracciato GPS, Delta tempo, Velocità, Throttle, Brake, Marcia.
+- Sette grafici sincronizzati: Tracciato GPS, Delta tempo, Velocità, Heatmap Velocità, Throttle, Brake, Marcia.
 - **Click** sui grafici di telemetria aggiunge linea verticale, aggiorna tutti i grafici e piazza un marker sul tracciato (tempo mostrato come hh:mm:ss.sss).
 - Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico.
 - Cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
 - Spinner di caricamento sui grafici durante gli update.
+- Pulsante "Stampa PDF" per esportare la pagina formattata.
 
 ## Dipendenze
 ```bash
@@ -54,6 +55,7 @@ utils/graph_order.py    # Ordine grafici e titoli
 - Tracciato GPS · P1 vs P2  
 - Delta tempo · P2 vs P1  
 - Velocità · …  
+- Heatmap Velocità · …  
 - Throttle · …  
 - Brake · …  
 - Marcia · …

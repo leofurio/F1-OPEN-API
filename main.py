@@ -7,6 +7,7 @@ import callbacks.drivers
 import callbacks.graphs
 import callbacks.cache
 import callbacks.graph_order
+import callbacks.print_callback
 
 # Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente
 app = Dash(__name__, suppress_callback_exceptions=True)

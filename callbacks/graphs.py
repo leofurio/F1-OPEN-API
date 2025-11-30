@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, State, callback, callback_context, no_update
@@ -33,6 +34,7 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
         Output("track-graph", "figure"),
         Output("delta-graph", "figure"),
         Output("speed-graph", "figure"),
+        Output("speed-heatmap", "figure"),
         Output("throttle-graph", "figure"),
         Output("brake-graph", "figure"),
         Output("gear-graph", "figure"),
@@ -80,7 +82,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     )
 
     if not laps_data or not session_key or not driver1 or not driver2 or not lap1_number or not lap2_number:
-        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig
+        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     df_laps = pd.DataFrame(laps_data)
     df_drivers = pd.DataFrame(drivers_data) if drivers_data else pd.DataFrame()
@@ -94,7 +96,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     if lap1_rows.empty or lap2_rows.empty:
         empty_fig.update_layout(title="Dati non disponibili per questo giro/pilota.")
-        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig
+        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     lap1_row = lap1_rows.iloc[0]
     lap2_row = lap2_rows.iloc[0]
@@ -106,11 +108,11 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         loc2 = fetch_location_for_lap(int(session_key), int(driver2), lap2_row)
     except Exception as e:
         empty_fig.update_layout(title=f"Errore: {e}")
-        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig
+        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     if df1.empty and df2.empty:
         empty_fig.update_layout(title="Nessun car_data disponibile.")
-        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig
+        return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     name1_short = driver_label(int(driver1), df_drivers)
     name2_short = driver_label(int(driver2), df_drivers)
@@ -168,6 +170,55 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Velocita (km/h)",
         template="plotly_white",
+    )
+
+    # -------- SPEED HEATMAP --------
+    speed_heatmap = go.Figure()
+    progress_grid = np.linspace(0.0, 1.0, 120)
+
+    def interp_speed(df, duration):
+        if df.empty:
+            return np.full_like(progress_grid, np.nan, dtype=float)
+        duration = duration or float(df["t_rel_s"].max())
+        rel = df["t_rel_s"].to_numpy()
+        speed_vals = df["speed"].to_numpy()
+        return np.interp(progress_grid * duration, rel, speed_vals)
+
+    z = [
+        interp_speed(df1, dur1_s),
+        interp_speed(df2, dur2_s),
+    ]
+    speed_heatmap.add_trace(
+        go.Heatmap(
+            z=z,
+            x=progress_grid * 100.0,
+            y=[name1_short, name2_short],
+            colorscale="Turbo",
+            colorbar=dict(title="km/h"),
+            zmin=np.nanmin(z) if not np.isnan(z).all() else None,
+            zmax=np.nanmax(z) if not np.isnan(z).all() else None,
+        )
+    )
+    heatmap_shapes = []
+    if selected_time is not None:
+        heatmap_shapes.append(
+            dict(
+                type="line",
+                xref="x",
+                x0=selected_time / dur1_s * 100 if dur1_s else selected_time,
+                x1=selected_time / dur1_s * 100 if dur1_s else selected_time,
+                yref="paper",
+                y0=0,
+                y1=1,
+                line=dict(color="black", dash="dot", width=1.5),
+            )
+        )
+    speed_heatmap.update_layout(
+        title=f"Heatmap velocita{title_suffix}{selected_time_str}",
+        xaxis_title="Progresso giro (%)",
+        yaxis_title="Pilota",
+        template="plotly_white",
+        shapes=heatmap_shapes,
     )
 
     # -------- THROTTLE --------
@@ -316,7 +367,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         add_marker(loc1, COLOR1, name1_short)
         add_marker(loc2, COLOR2, name2_short)
 
-    return track_fig, delta_fig, speed_fig, throttle_fig, brake_fig, gear_fig
+    return track_fig, delta_fig, speed_fig, speed_heatmap, throttle_fig, brake_fig, gear_fig
 
 
 @callback(
