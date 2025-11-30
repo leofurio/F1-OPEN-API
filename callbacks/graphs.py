@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, State, callback, callback_context, no_update
@@ -294,34 +295,47 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
 @callback(
     Output("selected-time-store", "data"),
+    Output("graph-click-store", "data"),
     inputs=[
         Input("speed-graph", "hoverData"),
         Input("speed-graph", "clickData"),
         Input("session-dropdown", "value"),
     ],
+    state=[State("graph-click-store", "data")],
 )
-def update_selected_time(hover_data, click_data, session_key):
+def update_selected_time(hover_data, click_data, session_key, click_meta):
     """Cattura il tempo selezionato dai grafici."""
     ctx = callback_context
 
     if not ctx.triggered:
-        return no_update
+        return no_update, click_meta
 
     prop_id = ctx.triggered[0]["prop_id"]
 
     if "session-dropdown" in prop_id:
-        return None
+        return None, {"last_ts": None}
 
-    source = click_data if "clickData" in prop_id and click_data else hover_data
+    # Double-click detection on speed-graph
+    if "clickData" in prop_id:
+        now = time.time()
+        last_ts = click_meta.get("last_ts") if isinstance(click_meta, dict) else None
+        if last_ts and (now - last_ts) < 0.6:  # double click within 600ms
+            source = click_data
+            new_meta = {"last_ts": None}
+        else:
+            return no_update, {"last_ts": now}
+    else:
+        source = hover_data
+        new_meta = click_meta
 
     if not source or "points" not in source or not source["points"]:
-        return no_update
+        return no_update, new_meta
 
     x_val = source["points"][0].get("x")
     if x_val is None:
-        return no_update
+        return no_update, new_meta
 
     try:
-        return float(x_val)
+        return float(x_val), new_meta
     except (TypeError, ValueError):
-        return no_update
+        return no_update, new_meta

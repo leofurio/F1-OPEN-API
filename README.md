@@ -5,7 +5,7 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 ## Cosa fa
 - Flusso: Anno → Circuito → Sessione → Pilota/Giro 1 e 2 → Grafici.
 - Sei grafici sincronizzati: Tracciato, Delta tempo, Velocità, Throttle, Brake, Marcia.
-- Click/Hover sui grafici di telemetria aggiunge linea verticale, aggiorna tutti i grafici e piazza un marker sul tracciato.
+- Hover e **doppio click** sui grafici di telemetria aggiungono linea verticale, aggiornano tutti i grafici e piazzano un marker sul tracciato.
 - Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico.
 - Cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
 - Spinner di caricamento sui grafici durante gli update.
@@ -44,7 +44,7 @@ utils/graph_order.py    # Ordine grafici e titoli
 1) Inserisci l'anno e clicca "Carica Circuiti".  
 2) Scegli circuito e sessione.  
 3) Seleziona Pilota 1 e 2 e i rispettivi giri.  
-4) Clic/hover su speed/throttle/brake/gear per fissare un tempo: si aggiorna la linea verticale, compaiono i marker sul tracciato e gli altri grafici si allineano.  
+4) Hover o doppio click su speed/throttle/brake/gear per fissare un tempo: si aggiorna la linea verticale, compaiono i marker sul tracciato e gli altri grafici si allineano.  
 5) Cambia l'ordine dei grafici con il radio e i pulsanti su/giu/reset; la pagina si aggiorna istantaneamente.  
 6) Pulisci la cache con il pulsante dedicato se vuoi ricaricare dati freschi.
 
