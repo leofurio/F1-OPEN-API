@@ -125,7 +125,6 @@ def create_layout():
             dcc.Store(id="laps-store"),
             dcc.Store(id="drivers-store"),
             dcc.Store(id="selected-time-store"),
-            dcc.Store(id="graph-click-store"),
 
             html.Hr(),
 

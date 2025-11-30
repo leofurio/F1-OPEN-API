@@ -1,4 +1,3 @@
-import time
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, State, callback, callback_context, no_update
@@ -44,7 +43,7 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
         Input("lap1-dropdown", "value"),
         Input("driver2-dropdown", "value"),
         Input("lap2-dropdown", "value"),
-        Input("selected-time-store", "data"),  # click/hover su speed-graph
+        Input("selected-time-store", "data"),
     ],
     state=[
         State("laps-store", "data"),
@@ -58,7 +57,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
-        title="📊 Seleziona sessione, piloti e giri.",
+        title="Seleziona sessione, piloti e giri.",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="",
         template="plotly_white",
@@ -66,7 +65,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     track_fig = go.Figure()
     track_fig.update_layout(
-        title="🗺️ Tracciato non disponibile",
+        title="Tracciato non disponibile",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -74,7 +73,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     delta_fig = go.Figure()
     delta_fig.update_layout(
-        title="⏱️ Delta tempo non disponibile",
+        title="Delta tempo non disponibile",
         xaxis_title="Progresso giro (%)",
         yaxis_title="Delta tempo (s)",
         template="plotly_white",
@@ -126,7 +125,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     name2 = f"{name2_short}<br>Lap {lap2_number} (durata: {dur2_str})"
 
     title_suffix = f" · {name1_short} Lap {lap1_number} vs {name2_short} Lap {lap2_number}"
-    selected_time_str = f" · t: {selected_time:.2f}s" if selected_time is not None else ""
+    selected_time_str = f" · t: {fmt_duration(selected_time)}" if selected_time is not None else ""
 
     # -------- TRACK --------
     track_fig = go.Figure()
@@ -135,7 +134,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     if not loc2.empty and loc2["x"].notna().any():
         track_fig.add_trace(go.Scatter(x=loc2["x"], y=loc2["y"], mode="lines", name=name2, line=dict(color=COLOR2)))
     track_fig.update_layout(
-        title=f"🗺️ Tracciato · {name1_short} vs {name2_short}",
+        title=f"Tracciato · {name1_short} vs {name2_short}",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -149,7 +148,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         delta_fig.add_trace(go.Scatter(x=progress * 100.0, y=delta_t, mode="lines",
                                        name=f"{name2_short} vs {name1_short}", line=dict(color="#2ca02c")))
         delta_fig.update_layout(
-            title=f"⏱️ Delta tempo · {name2_short} vs {name1_short}",
+            title=f"Delta tempo · {name2_short} vs {name1_short}",
             xaxis_title="Progresso giro (%)",
             yaxis_title=f"Delta (s, >0 = {name2_short} piu lento)",
             template="plotly_white",
@@ -165,7 +164,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         speed_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["speed"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     speed_fig.update_layout(
-        title=f"🏎️💨 Velocita{title_suffix}{selected_time_str}",
+        title=f"Velocita{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Velocita (km/h)",
         template="plotly_white",
@@ -180,7 +179,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         throttle_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["throttle"], mode="lines",
                                           name=name2, line=dict(color=COLOR2)))
     throttle_fig.update_layout(
-        title=f"⚡ Throttle{title_suffix}{selected_time_str}",
+        title=f"Throttle{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Throttle (%)",
         template="plotly_white",
@@ -195,7 +194,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         brake_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["brake"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     brake_fig.update_layout(
-        title=f"🛑 Brake{title_suffix}{selected_time_str}",
+        title=f"Brake{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Brake",
         template="plotly_white",
@@ -210,7 +209,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         gear_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["n_gear"], mode="lines",
                                       name=name2, line=dict(color=COLOR2)))
     gear_fig.update_layout(
-        title=f"⚙️ Marcia{title_suffix}{selected_time_str}",
+        title=f"Marcia{title_suffix}{selected_time_str}",
         xaxis_title="Tempo relativo (s)",
         yaxis_title="Marcia",
         template="plotly_white",
@@ -281,7 +280,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
                     x=[row["x"]],
                     y=[row["y"]],
                     mode="markers",
-                    name=f"{label} @ {selected_time:.2f}s",
+                    name=f"{label} @ {fmt_duration(selected_time)}",
                     marker=dict(color=color, size=10, symbol="x"),
                     showlegend=True,
                 )
@@ -295,47 +294,33 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
 @callback(
     Output("selected-time-store", "data"),
-    Output("graph-click-store", "data"),
     inputs=[
-        Input("speed-graph", "hoverData"),
         Input("speed-graph", "clickData"),
         Input("session-dropdown", "value"),
     ],
-    state=[State("graph-click-store", "data")],
 )
-def update_selected_time(hover_data, click_data, session_key, click_meta):
-    """Cattura il tempo selezionato dai grafici."""
+def update_selected_time(click_data, session_key):
+    """Cattura il tempo selezionato con click sul grafico speed."""
     ctx = callback_context
 
     if not ctx.triggered:
-        return no_update, click_meta
+        return no_update
 
     prop_id = ctx.triggered[0]["prop_id"]
 
     if "session-dropdown" in prop_id:
-        return None, {"last_ts": None}
+        return None
 
-    # Double-click detection on speed-graph
-    if "clickData" in prop_id:
-        now = time.time()
-        last_ts = click_meta.get("last_ts") if isinstance(click_meta, dict) else None
-        if last_ts and (now - last_ts) < 0.6:  # double click within 600ms
-            source = click_data
-            new_meta = {"last_ts": None}
-        else:
-            return no_update, {"last_ts": now}
-    else:
-        source = hover_data
-        new_meta = click_meta
+    source = click_data
 
     if not source or "points" not in source or not source["points"]:
-        return no_update, new_meta
+        return no_update
 
     x_val = source["points"][0].get("x")
     if x_val is None:
-        return no_update, new_meta
+        return no_update
 
     try:
-        return float(x_val), new_meta
+        return float(x_val)
     except (TypeError, ValueError):
-        return no_update, new_meta
+        return no_update
