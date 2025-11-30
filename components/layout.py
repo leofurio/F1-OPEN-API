@@ -28,7 +28,7 @@ def create_layout():
                                 value=current_year,   # prevalorizzato con anno corrente
                                 style={"width": "100%"},
                             ),
-                            html.Button(
+                            html.Button( 
                                 "Carica Circuiti",
                                 id="load-meetings-btn",
                                 n_clicks=0,
