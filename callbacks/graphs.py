@@ -247,7 +247,34 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     for fig in [speed_fig, throttle_fig, brake_fig, gear_fig]:
         base_shapes = list(fig.layout.shapes) if fig.layout.shapes else []
         base_shapes.extend(end_lines)
-        fig.update_layout(shapes=base_shapes)
+
+        base_annotations = list(fig.layout.annotations) if fig.layout.annotations else []
+        if dur1_s is not None:
+            base_annotations.append(
+                dict(
+                    x=dur1_s,
+                    xref="x",
+                    y=1.02,
+                    yref="paper",
+                    text="Traguardo",
+                    showarrow=False,
+                    font=dict(color=COLOR1, size=10),
+                )
+            )
+        if dur2_s is not None:
+            base_annotations.append(
+                dict(
+                    x=dur2_s,
+                    xref="x",
+                    y=1.02,
+                    yref="paper",
+                    text="Traguardo",
+                    showarrow=False,
+                    font=dict(color=COLOR2, size=10),
+                )
+            )
+
+        fig.update_layout(shapes=base_shapes, annotations=base_annotations)
 
     # Aggiungi linea verticale e marcatori se selected_time
     if selected_time is not None:

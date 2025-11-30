@@ -2,6 +2,8 @@
 
 Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando l'API OpenF1.
 
+> ⚠️ Nota: durante le sessioni attive (FP, Qualifiche, Gara) l'API OpenF1 nasconde i dati live: servirebbe un abbonamento per vederli in tempo reale. I dati tornano disponibili a sessione conclusa.
+
 ## Cosa fa
 - Flusso: Anno → Circuito → Sessione → Pilota/Giro 1 e 2 → Grafici.
 - Sei grafici sincronizzati: Tracciato, Delta tempo, Velocità, Throttle, Brake, Marcia.
