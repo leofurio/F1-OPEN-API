@@ -1,8 +1,10 @@
 from dash import dcc, html
+from datetime import datetime
 
 
 def create_layout():
     """Crea il layout della dashboard."""
+    current_year = datetime.utcnow().year
     return html.Div(
         style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
         children=[
@@ -23,6 +25,7 @@ def create_layout():
                                 id="year-input",
                                 type="number",
                                 placeholder="Es. 2024",
+                                value=current_year,   # prevalorizzato con anno corrente
                                 style={"width": "100%"},
                             ),
                             html.Button(

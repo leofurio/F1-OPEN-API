@@ -46,16 +46,22 @@ def parse_time_str(s):
 
 
 def fmt_duration(s: float | None) -> str:
-    """Formatta durata da secondi a mm:ss.s o hh:mm:ss.s."""
+    """Formatta durata da secondi a hh:mm:ss.sss (millisecondi, 3 cifre)."""
     if s is None:
         return "N/A"
-    total = float(s)
-    hours = int(total // 3600)
-    minutes = int((total % 3600) // 60)
-    seconds = total % 60
-    if hours:
-        return f"{hours:d}:{minutes:02d}:{seconds:04.1f}"
-    return f"{minutes:d}:{seconds:04.1f}"
+    try:
+        total_ms = int(round(float(s) * 1000))
+    except Exception:
+        return "N/A"
+
+    hours = total_ms // 3_600_000
+    rem = total_ms % 3_600_000
+    minutes = rem // 60_000
+    rem = rem % 60_000
+    seconds = rem // 1000
+    milliseconds = rem % 1000
+
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 
 
 def lap_duration_seconds_from_row(lap_row: pd.Series, df: pd.DataFrame):
