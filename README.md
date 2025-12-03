@@ -8,6 +8,8 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 - Flusso: Anno > Circuito > Sessione > Pilota/Giro 1 e 2 > Grafici.
 - Due tab: **Telemetria giro** (7 grafici sincronizzati) e **Confronto tutti i giri** (tempi e delta giro-giro tra due piloti).
 - Telemetria: Tracciato GPS, Delta tempo, Velocita, Heatmap Velocita, Throttle, Brake, Marcia; click sui grafici di telemetria aggiunge linea verticale e marker sul tracciato (hh:mm:ss.sss).
+- Confronto giri: heatmap tempi con tempi migliori per lap in grassetto, colonna delta e colonna delta cumulativo (entrambe non colorate) più grafici linea/bar per tempi e delta.
+- Multilingua: selettore Italiano/English in alto, testi e messaggi tradotti (default Italiano).
 - Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico.
 - Cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
 - Spinner di caricamento sui grafici durante gli update e pulsante "Stampa PDF".
@@ -25,6 +27,10 @@ cd "c:\F1 OPEN API"
 python main.py
 # poi apri http://127.0.0.1:8050
 ```
+
+## Lingue
+- Selettore in alto a destra: Italiano (default) o English.
+- Tradotti titoli, etichette, pulsanti e messaggi di stato/grafici principali.
 
 ## Struttura
 ```
@@ -90,6 +96,8 @@ utils/graph_order.py    # Ordine grafici e titoli
 - Confronto tutti i giri (tempi/delta):  
   ![Confronto 1](images/confronto1.png)  
   ![Confronto 2](images/confronto2.png)
+- Confronto giri con delta cumulativo:  
+  ![Heatmap tempi + delta cumulativo](images/lapsconfrontodelta.png)
 
 ## Troubleshooting
 - Nessun car_data trovato: l'API non ha telemetria per quella sessione/giro; prova un'altra sessione.
@@ -100,4 +108,13 @@ utils/graph_order.py    # Ordine grafici e titoli
 ---
 Autore: Leonardo Furio  
 Ultimo aggiornamento: 03 dicembre 2025  
-Versione: 1.3 (tab confronto tutti i giri + screenshots)
+Versione: 1.5 (multilingua IT/EN + heatmap delta cumulativo)
+
+---
+
+## English (short version)
+- Dash app to compare two drivers using OpenF1; flow: Year > Circuit > Session > Driver/Lap 1&2 > Telemetry + All-lap comparison.
+- Tabs: Lap telemetry (7 synced charts) and All-laps (times, delta, heatmap with delta & cumulative delta).
+- Language toggle (top right): Italian / English, default Italian.
+- Quick start: `python main.py` then open `http://127.0.0.1:8050`.
+- New screenshot: `images/lapsconfrontodelta.png` shows the all-laps heatmap with delta and cumulative delta.

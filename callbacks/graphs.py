@@ -10,6 +10,7 @@ from utils.telemetry import (
     fmt_duration,
 )
 from config import COLOR1, COLOR2
+from utils.i18n import t, LANG_DEFAULT
 
 
 def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
@@ -46,6 +47,7 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
         Input("driver2-dropdown", "value"),
         Input("lap2-dropdown", "value"),
         Input("selected-time-store", "data"),
+        Input("lang-store", "data"),
     ],
     state=[
         State("laps-store", "data"),
@@ -54,20 +56,21 @@ def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
     prevent_initial_call=False,
 )
 def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selected_time,
-                  laps_data, drivers_data):
+                  lang, laps_data, drivers_data):
     """Aggiorna tutti i 6 grafici."""
+    lang = lang or LANG_DEFAULT
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
-        title="Seleziona sessione, piloti e giri.",
-        xaxis_title="Tempo relativo (s)",
+        title=t(lang, "graphs_select"),
+        xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="",
         template="plotly_white",
     )
 
     track_fig = go.Figure()
     track_fig.update_layout(
-        title="Tracciato GPS non disponibile",
+        title=t(lang, "track_unavailable"),
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -75,9 +78,9 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
 
     delta_fig = go.Figure()
     delta_fig.update_layout(
-        title="Delta tempo non disponibile",
-        xaxis_title="Progresso giro (%)",
-        yaxis_title="Delta tempo (s)",
+        title=t(lang, "delta_unavailable"),
+        xaxis_title=t(lang, "progress_x"),
+        yaxis_title=t(lang, "delta_y_time"),
         template="plotly_white",
     )
 
@@ -95,7 +98,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     ]
 
     if lap1_rows.empty or lap2_rows.empty:
-        empty_fig.update_layout(title="Dati non disponibili per questo giro/pilota.")
+        empty_fig.update_layout(title=t(lang, "lap_unavailable"))
         return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     lap1_row = lap1_rows.iloc[0]
@@ -107,11 +110,11 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         loc1 = fetch_location_for_lap(int(session_key), int(driver1), lap1_row)
         loc2 = fetch_location_for_lap(int(session_key), int(driver2), lap2_row)
     except Exception as e:
-        empty_fig.update_layout(title=f"Errore: {e}")
+        empty_fig.update_layout(title=t(lang, "error_generic", error=e))
         return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     if df1.empty and df2.empty:
-        empty_fig.update_layout(title="Nessun car_data disponibile.")
+        empty_fig.update_layout(title=t(lang, "lap_unavailable"))
         return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     name1_short = driver_label(int(driver1), df_drivers)
@@ -136,7 +139,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
     if not loc2.empty and loc2["x"].notna().any():
         track_fig.add_trace(go.Scatter(x=loc2["x"], y=loc2["y"], mode="lines", name=name2, line=dict(color=COLOR2)))
     track_fig.update_layout(
-        title=f"Tracciato GPS · {name1_short} vs {name2_short}",
+        title=f"{t(lang, 'track_title')} · {name1_short} vs {name2_short}",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
         template="plotly_white",
@@ -150,9 +153,9 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         delta_fig.add_trace(go.Scatter(x=progress * 100.0, y=delta_t, mode="lines",
                                        name=f"{name2_short} vs {name1_short}", line=dict(color="#2ca02c")))
         delta_fig.update_layout(
-            title=f"Delta tempo · {name2_short} vs {name1_short}",
-            xaxis_title="Progresso giro (%)",
-            yaxis_title=f"Delta (s, >0 = {name2_short} piu lento)",
+            title=f"{t(lang, 'delta_graph_title')} · {name2_short} vs {name1_short}",
+            xaxis_title=t(lang, "progress_x"),
+            yaxis_title=f"Delta (s, >0 = {name2_short} più lento)",
             template="plotly_white",
             shapes=[dict(type="line", xref="paper", x0=0, x1=1, y0=0, y1=0, line=dict(dash="dash", width=1))],
         )
@@ -166,9 +169,9 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         speed_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["speed"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     speed_fig.update_layout(
-        title=f"Velocita{title_suffix}{selected_time_str}",
-        xaxis_title="Tempo relativo (s)",
-        yaxis_title="Velocita (km/h)",
+        title=t(lang, "speed_title", suffix=title_suffix) + selected_time_str,
+        xaxis_title=t(lang, "telemetry_x"),
+        yaxis_title=t(lang, "speed_y"),
         template="plotly_white",
     )
 
@@ -214,8 +217,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
             )
         )
     speed_heatmap.update_layout(
-        title=f"Heatmap velocita{title_suffix}{selected_time_str}",
-        xaxis_title="Progresso giro (%)",
+        title=t(lang, "heat_speed_title", suffix=title_suffix) + selected_time_str,
+        xaxis_title=t(lang, "progress_x"),
         yaxis_title="Pilota",
         template="plotly_white",
         shapes=heatmap_shapes,
@@ -230,8 +233,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         throttle_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["throttle"], mode="lines",
                                           name=name2, line=dict(color=COLOR2)))
     throttle_fig.update_layout(
-        title=f"Throttle{title_suffix}{selected_time_str}",
-        xaxis_title="Tempo relativo (s)",
+        title=t(lang, "throttle_title", suffix=title_suffix) + selected_time_str,
+        xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Throttle (%)",
         template="plotly_white",
     )
@@ -245,8 +248,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         brake_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["brake"], mode="lines",
                                        name=name2, line=dict(color=COLOR2)))
     brake_fig.update_layout(
-        title=f"Brake{title_suffix}{selected_time_str}",
-        xaxis_title="Tempo relativo (s)",
+        title=t(lang, "brake_title", suffix=title_suffix) + selected_time_str,
+        xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Brake",
         template="plotly_white",
     )
@@ -260,8 +263,8 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         gear_fig.add_trace(go.Scatter(x=df2["t_rel_s"], y=df2["n_gear"], mode="lines",
                                       name=name2, line=dict(color=COLOR2)))
     gear_fig.update_layout(
-        title=f"Marcia{title_suffix}{selected_time_str}",
-        xaxis_title="Tempo relativo (s)",
+        title=t(lang, "gear_title", suffix=title_suffix) + selected_time_str,
+        xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Marcia",
         template="plotly_white",
     )
@@ -307,7 +310,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
                     xref="x",
                     y=1.02,
                     yref="paper",
-                    text="Traguardo",
+                    text=t(lang, "finish_label"),
                     showarrow=False,
                     font=dict(color=COLOR1, size=10),
                 )
@@ -319,7 +322,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
                     xref="x",
                     y=1.02,
                     yref="paper",
-                    text="Traguardo",
+                    text=t(lang, "finish_label"),
                     showarrow=False,
                     font=dict(color=COLOR2, size=10),
                 )

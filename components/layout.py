@@ -9,8 +9,26 @@ def create_layout():
     return html.Div(
         style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
         children=[
-            html.H1("OpenF1 - Driver Comparison Dashboard"),
-            html.P("Flusso: Anno > Circuito > Sessione > Drivers > Lap > Telemetria + Location + Delta time."),
+            html.Div(
+                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "gap": "12px"},
+                children=[
+                    html.H1(id="page-title", children="OpenF1 - Driver Comparison Dashboard"),
+                    dcc.Dropdown(
+                        id="language-dropdown",
+                        options=[
+                            {"label": "Italiano", "value": "it"},
+                            {"label": "English", "value": "en"},
+                        ],
+                        value="it",
+                        clearable=False,
+                        style={"width": "180px"},
+                    ),
+                ],
+            ),
+            html.P(
+                id="intro-text",
+                children="Flusso: Anno > Circuito > Sessione > Drivers > Lap > Telemetria + Location + Delta time.",
+            ),
 
             html.Hr(),
 
@@ -21,7 +39,7 @@ def create_layout():
                     html.Div(
                         style={"flex": "1"},
                         children=[
-                            html.Label("Anno"),
+                            html.Label(id="year-label", children="Anno"),
                             dcc.Input(
                                 id="year-input",
                                 type="number",
@@ -30,8 +48,8 @@ def create_layout():
                                 style={"width": "100%"},
                             ),
                             html.Button(
-                                "Carica Circuiti",
                                 id="load-meetings-btn",
+                                children="Carica Circuiti",
                                 n_clicks=0,
                                 style={"marginTop": "8px"},
                             ),
@@ -44,7 +62,7 @@ def create_layout():
                     html.Div(
                         style={"flex": "2"},
                         children=[
-                            html.Label("Circuito (Gran Premio)"),
+                            html.Label(id="meeting-label", children="Circuito (Gran Premio)"),
                             dcc.Dropdown(id="meeting-dropdown", options=[], value=None),
                         ],
                     ),
@@ -58,7 +76,7 @@ def create_layout():
                     html.Div(
                         style={"flex": "1"},
                         children=[
-                            html.Label("Sessione"),
+                            html.Label(id="session-label", children="Sessione"),
                             dcc.Dropdown(id="session-dropdown", options=[], value=None),
                             html.Div(
                                 id="sessions-status",
@@ -69,14 +87,14 @@ def create_layout():
                     html.Div(
                         style={"flex": "2"},
                         children=[
-                            html.Label("Pilota 1"),
+                            html.Label(id="driver1-label", children="Pilota 1"),
                             dcc.Dropdown(id="driver1-dropdown", options=[], value=None),
-                            html.Label("Giro Pilota 1"),
+                            html.Label(id="lap1-label", children="Giro Pilota 1"),
                             dcc.Dropdown(id="lap1-dropdown", options=[], value=None),
                             html.Br(),
-                            html.Label("Pilota 2"),
+                            html.Label(id="driver2-label", children="Pilota 2"),
                             dcc.Dropdown(id="driver2-dropdown", options=[], value=None),
-                            html.Label("Giro Pilota 2"),
+                            html.Label(id="lap2-label", children="Giro Pilota 2"),
                             dcc.Dropdown(id="lap2-dropdown", options=[], value=None),
                             html.Div(
                                 id="laps-status",
@@ -98,6 +116,7 @@ def create_layout():
             dcc.Store(id="drivers-store"),
             dcc.Store(id="selected-time-store"),
             dcc.Store(id="graph-order-store", data=DEFAULT_GRAPH_ORDER),
+            dcc.Store(id="lang-store", data="it"),
 
             html.Hr(),
 
@@ -106,6 +125,7 @@ def create_layout():
                 value="telemetry",
                 children=[
                     dcc.Tab(
+                        id="tab-telemetry",
                         label="Telemetria giro",
                         value="telemetry",
                         children=[
@@ -114,7 +134,7 @@ def create_layout():
                                 children=[
                                     html.Div(
                                         children=[
-                                            html.Label("Ordine grafici:"),
+                                            html.Label(id="graph-order-label", children="Ordine grafici:"),
                                             dcc.RadioItems(
                                                 id="graph-order-radio",
                                                 options=[{"label": GRAPH_TITLES[g], "value": g} for g in DEFAULT_GRAPH_ORDER],
@@ -128,9 +148,9 @@ def create_layout():
                                     html.Div(
                                         style={"display": "flex", "flexDirection": "column", "gap": "8px"},
                                         children=[
-                                            html.Button("Move Up", id="move-up-btn", n_clicks=0),
-                                            html.Button("Move Down", id="move-down-btn", n_clicks=0),
-                                            html.Button("Reset ordine", id="reset-graph-order-btn", n_clicks=0),
+                                            html.Button(id="move-up-btn", children="Move Up", n_clicks=0),
+                                            html.Button(id="move-down-btn", children="Move Down", n_clicks=0),
+                                            html.Button(id="reset-graph-order-btn", children="Reset ordine", n_clicks=0),
                                         ],
                                     ),
                                     html.Div(id="graph-order-msg", style={"color": "#555", "marginLeft": "12px"}),
@@ -140,7 +160,7 @@ def create_layout():
                             html.Div(
                                 style={"marginBottom": "12px"},
                                 children=[
-                                    html.Button("Stampa PDF", id="print-btn", n_clicks=0),
+                                    html.Button(id="print-btn", children="Stampa PDF", n_clicks=0),
                                 ],
                             ),
                             html.Div(id="print-trigger", style={"display": "none"}),
@@ -173,6 +193,7 @@ def create_layout():
                         ],
                     ),
                     dcc.Tab(
+                        id="tab-all-laps",
                         label="Confronto tutti i giri",
                         value="all-laps",
                         children=[
@@ -193,6 +214,15 @@ def create_layout():
                                         type="circle",
                                         color="#555",
                                         children=dcc.Graph(id="all-laps-delta-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(
+                                            id="all-laps-heatmap",
+                                            style={"width": "100%"},
+                                            config={"responsive": True},
+                                        ),
                                     ),
                                 ],
                             ),
