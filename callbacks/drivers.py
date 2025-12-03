@@ -1,5 +1,6 @@
 import pandas as pd
 from dash import Input, Output, State, callback
+
 from api.openf1 import fetch_laps, fetch_drivers
 from utils.telemetry import fmt_duration, lap_duration_seconds_from_row
 
@@ -23,10 +24,10 @@ def load_laps_and_drivers(session_key):
     try:
         df_laps = fetch_laps(int(session_key))
     except Exception as e:
-        return None, [], None, [], None, f"❌ Errore: {e}", None
+        return None, [], None, [], None, f"Errore: {e}", None
 
     if df_laps.empty:
-        return None, [], None, [], None, "⚠ Nessun giro trovato.", None
+        return None, [], None, [], None, "Nessun giro trovato.", None
 
     try:
         df_drivers = fetch_drivers(int(session_key))
@@ -43,9 +44,9 @@ def load_laps_and_drivers(session_key):
                 full_name = row.get("full_name") or row.get("name_acronym") or ""
                 team = row.get("team_name") or ""
                 if full_name and team:
-                    return f"#{int(num)} – {full_name} ({team})"
-                elif full_name:
-                    return f"#{int(num)} – {full_name}"
+                    return f"#{int(num)} - {full_name} ({team})"
+                if full_name:
+                    return f"#{int(num)} - {full_name}"
         return f"Driver #{int(num)}"
 
     driver_options = [
@@ -56,7 +57,7 @@ def load_laps_and_drivers(session_key):
     d2 = driver_numbers[1] if len(driver_numbers) > 1 else None
 
     status = (
-        f"✅ Laps: {len(df_laps)} | Drivers: {len(driver_numbers)} | "
+        f"Laps: {len(df_laps)} | Drivers: {len(driver_numbers)} | "
         f"Max lap: {int(df_laps['lap_number'].max())}"
     )
 
@@ -93,17 +94,28 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
     def build_options_for(driver):
         if not driver:
             return [], None
-        rows = df_laps[df_laps["driver_number"] == int(driver)].dropna(subset=["lap_number"])
+        rows = df_laps[df_laps["driver_number"] == int(driver)].dropna(subset=["lap_number"]).copy()
         if rows.empty:
             return [], None
+
+        # Calcola la durata di ogni giro per evidenziare il piu breve
+        rows["dur_s"] = rows.apply(
+            lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
+            axis=1,
+        )
+        best_lap_num = None
+        valid = rows.dropna(subset=["dur_s"])
+        if not valid.empty:
+            best_lap_num = int(valid.loc[valid["dur_s"].idxmin()]["lap_number"])
+
         opts = []
-        # ordina per lap_number e crea label con durata
+        # Ordina per lap_number e crea label con durata
         for _, r in rows.sort_values("lap_number").iterrows():
             lap_num = int(r["lap_number"])
-            # estrai durata dal row (preferisce il campo fornito dalle API)
-            dur_s = lap_duration_seconds_from_row(r, pd.DataFrame())
+            dur_s = r.get("dur_s")
             dur_label = fmt_duration(dur_s)
-            label = f"Lap {lap_num} — {dur_label}"
+            suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
+            label = f"Lap {lap_num} — {dur_label}{suffix}"
             opts.append({"label": label, "value": lap_num})
         val = opts[-1]["value"] if opts else None
         return opts, val
@@ -112,3 +124,74 @@ def update_lap_dropdowns(driver1, driver2, laps_data):
     lap2_options, lap2_val = build_options_for(driver2)
 
     return lap1_options, lap1_val, lap2_options, lap2_val
+
+
+@callback(
+    Output("lap-compare-status", "children"),
+    inputs=[
+        Input("driver1-dropdown", "value"),
+        Input("lap1-dropdown", "value"),
+        Input("driver2-dropdown", "value"),
+        Input("lap2-dropdown", "value"),
+    ],
+    state=[
+        State("laps-store", "data"),
+        State("drivers-store", "data"),
+    ],
+)
+def show_fastest_lap(driver1, lap1, driver2, lap2, laps_data, drivers_data):
+    """Mostra quale giro selezionato e piu veloce tra i due piloti."""
+    if not laps_data:
+        return ""
+
+    if not driver1 or not driver2 or not lap1 or not lap2:
+        return "Seleziona due giri per confrontarli."
+
+    df_laps = pd.DataFrame(laps_data)
+    df_drivers = pd.DataFrame(drivers_data) if drivers_data else pd.DataFrame()
+
+    def driver_name(num: int) -> str:
+        if df_drivers.empty:
+            return f"Driver #{int(num)}"
+        row = df_drivers[df_drivers["driver_number"] == num]
+        if row.empty:
+            return f"Driver #{int(num)}"
+        row = row.iloc[0]
+        full_name = row.get("full_name") or row.get("name_acronym") or ""
+        team = row.get("team_name") or ""
+        if full_name and team:
+            return f"#{int(num)} - {full_name} ({team})"
+        if full_name:
+            return f"#{int(num)} - {full_name}"
+        return f"Driver #{int(num)}"
+
+    def pick_row(driver_num, lap_num):
+        rows = df_laps[
+            (df_laps["driver_number"] == int(driver_num))
+            & (df_laps["lap_number"] == int(lap_num))
+        ]
+        return rows.iloc[0] if not rows.empty else None
+
+    lap1_row = pick_row(driver1, lap1)
+    lap2_row = pick_row(driver2, lap2)
+    if lap1_row is None or lap2_row is None:
+        return "Tempo giro non disponibile per la selezione corrente."
+
+    dur1_s = lap_duration_seconds_from_row(lap1_row, pd.DataFrame())
+    dur2_s = lap_duration_seconds_from_row(lap2_row, pd.DataFrame())
+    if pd.isna(dur1_s) or pd.isna(dur2_s):
+        return "Tempo giro non disponibile per la selezione corrente."
+
+    label1 = f"{driver_name(int(driver1))} - Lap {lap1}"
+    label2 = f"{driver_name(int(driver2))} - Lap {lap2}"
+
+    delta = abs(dur1_s - dur2_s)
+    delta_str = fmt_duration(delta)
+
+    if abs(dur1_s - dur2_s) < 1e-3:
+        return f"Tempi equivalenti: {label1} e {label2} entrambi in {fmt_duration(dur1_s)}."
+
+    if dur1_s < dur2_s:
+        return f"Giro piu veloce: {label1} ({fmt_duration(dur1_s)}), vantaggio {delta_str} su {label2}."
+
+    return f"Giro piu veloce: {label2} ({fmt_duration(dur2_s)}), vantaggio {delta_str} su {label1}."

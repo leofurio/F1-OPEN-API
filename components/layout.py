@@ -82,6 +82,10 @@ def create_layout():
                                 id="laps-status",
                                 style={"marginTop": "10px", "color": "#555"},
                             ),
+                            html.Div(
+                                id="lap-compare-status",
+                                style={"marginTop": "6px", "color": "#222", "fontWeight": "bold"},
+                            ),
                         ],
                     ),
                 ],

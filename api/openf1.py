@@ -82,7 +82,9 @@ def fetch_car_data_for_lap(session_key: int,
         return pd.DataFrame()
 
     if not date_end:
-        start_dt = pd.to_datetime(date_start)
+        start_dt = pd.to_datetime(date_start, errors="coerce", utc=True)
+        if pd.isna(start_dt):
+            return pd.DataFrame()
         date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
         print(f"⚠ date_end era None, usando stima: {date_end}")
 
@@ -108,8 +110,10 @@ def fetch_car_data_for_lap(session_key: int,
     df = pd.DataFrame(data)
 
     if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"])
-        df = df.sort_values("date")
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        df = df.dropna(subset=["date"]).sort_values("date")
+        if df.empty:
+            return pd.DataFrame()
         t0 = df["date"].min()
         df["t_rel_s"] = (df["date"] - t0).dt.total_seconds()
     else:
@@ -133,7 +137,9 @@ def fetch_location_for_lap(session_key: int,
         return pd.DataFrame()
 
     if not date_end:
-        start_dt = pd.to_datetime(date_start)
+        start_dt = pd.to_datetime(date_start, errors="coerce", utc=True)
+        if pd.isna(start_dt):
+            return pd.DataFrame()
         date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
         print(f"⚠ (location) date_end era None, usando stima: {date_end}")
 
@@ -158,8 +164,10 @@ def fetch_location_for_lap(session_key: int,
     df = pd.DataFrame(data)
 
     if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"])
-        df = df.sort_values("date")
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        df = df.dropna(subset=["date"]).sort_values("date")
+        if df.empty:
+            return pd.DataFrame()
         t0 = df["date"].min()
         df["t_rel_s"] = (df["date"] - t0).dt.total_seconds()
     else:
