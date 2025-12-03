@@ -24,6 +24,23 @@ def _prepare_driver_laps(df_laps: pd.DataFrame, driver_number: int) -> pd.DataFr
     return laps
 
 
+def _driver_label(num: int, df_drivers: pd.DataFrame) -> str:
+    """Restituisce un'etichetta leggibile per il pilota."""
+    if df_drivers.empty:
+        return f"Driver {num}"
+    row = df_drivers[df_drivers["driver_number"] == num]
+    if row.empty:
+        return f"Driver {num}"
+    row = row.iloc[0]
+    full_name = row.get("full_name") or ""
+    acronym = row.get("name_acronym") or ""
+    team = row.get("team_name") or ""
+    name = full_name or acronym or f"Driver {num}"
+    if team:
+        return f"{name} ({team})"
+    return name
+
+
 def _empty_fig(title: str) -> go.Figure:
     fig = go.Figure()
     fig.update_layout(
@@ -44,9 +61,12 @@ def _empty_fig(title: str) -> go.Figure:
         Input("driver1-dropdown", "value"),
         Input("driver2-dropdown", "value"),
     ],
-    state=[State("laps-store", "data")],
+    state=[
+        State("laps-store", "data"),
+        State("drivers-store", "data"),
+    ],
 )
-def render_all_laps(session_key, driver1, driver2, laps_data):
+def render_all_laps(session_key, driver1, driver2, laps_data, drivers_data):
     """Mostra confronto di tutti i giri tra due piloti della stessa sessione."""
     try:
         if not session_key or not driver1 or not driver2 or not laps_data:
@@ -54,6 +74,9 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
             return _empty_fig(msg), _empty_fig(msg), msg
 
         df_laps = pd.DataFrame(laps_data)
+        df_drivers = pd.DataFrame(drivers_data) if drivers_data else pd.DataFrame()
+        label1 = _driver_label(int(driver1), df_drivers)
+        label2 = _driver_label(int(driver2), df_drivers)
         d1 = _prepare_driver_laps(df_laps, int(driver1))
         d2 = _prepare_driver_laps(df_laps, int(driver2))
 
@@ -69,7 +92,7 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
                     x=d1["lap_number"],
                     y=d1["lap_time_s"],
                     mode="lines+markers",
-                    name=f"Driver {driver1}",
+                    name=label1,
                     customdata=d1["lap_time_s"].apply(fmt_duration),
                     hovertemplate="Lap %{x}<br>Tempo %{customdata}<extra>%{name}</extra>",
                 )
@@ -80,13 +103,13 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
                     x=d2["lap_number"],
                     y=d2["lap_time_s"],
                     mode="lines+markers",
-                    name=f"Driver {driver2}",
+                    name=label2,
                     customdata=d2["lap_time_s"].apply(fmt_duration),
                     hovertemplate="Lap %{x}<br>Tempo %{customdata}<extra>%{name}</extra>",
                 )
             )
         times_fig.update_layout(
-            title=f"Tempi giro - Driver {driver1} vs Driver {driver2}",
+            title=f"Tempi giro - {label1} vs {label2}",
             xaxis_title="Lap",
             yaxis_title="Tempo giro (s)",
             template="plotly_white",
@@ -110,7 +133,7 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
                         x=merged["lap_number"],
                         y=merged["delta_s"],
                         marker_color=colors,
-                        name=f"Delta (Driver {driver2} - Driver {driver1})",
+                        name=f"Delta ({label2} - {label1})",
                         hovertemplate="Lap %{x}<br>Delta %{y:.3f} s<extra></extra>",
                     )
                 )
@@ -131,7 +154,7 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
             delta_fig = _empty_fig("Seleziona due piloti con giri disponibili per il delta.")
 
         delta_fig.update_layout(
-            title=f"Delta tempo per giro (Driver {driver2} - Driver {driver1})",
+            title=f"Delta tempo per giro ({label2} - {label1})",
             xaxis_title="Lap",
             yaxis_title="Delta (s, negativo = Driver 2 piu veloce)",
             template="plotly_white",
@@ -149,8 +172,8 @@ def render_all_laps(session_key, driver1, driver2, laps_data):
             )
 
         summary_text = [
-            html.Div(stats_block(d1, f"Driver {driver1}")),
-            html.Div(stats_block(d2, f"Driver {driver2}")),
+            html.Div(stats_block(d1, label1)),
+            html.Div(stats_block(d2, label2)),
         ]
 
         return times_fig, delta_fig, summary_text
