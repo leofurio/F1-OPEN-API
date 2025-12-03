@@ -27,6 +27,7 @@ cd "c:\F1 OPEN API"
 python main.py
 # poi apri http://127.0.0.1:8050
 ```
+- Demo live: https://f1-open-api-dashboard.onrender.com/
 
 ## Lingue
 - Selettore in alto a destra: Italiano (default) o English.
