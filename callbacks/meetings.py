@@ -12,7 +12,6 @@ from api.openf1 import fetch_meetings, fetch_sessions
     ],
     inputs=[Input("load-meetings-btn", "n_clicks")],
     state=[State("year-input", "value")],
-    prevent_initial_call=True,
 )
 def load_meetings(n_clicks, year):
     try:

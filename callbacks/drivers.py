@@ -73,57 +73,62 @@ def load_laps_and_drivers(session_key):
 
 
 @callback(
-    output=[
-        Output("lap1-dropdown", "options"),
-        Output("lap1-dropdown", "value"),
-        Output("lap2-dropdown", "options"),
-        Output("lap2-dropdown", "value"),
-    ],
-    inputs=[
-        Input("driver1-dropdown", "value"),
-        Input("driver2-dropdown", "value"),
-    ],
+    output=[Output("lap1-dropdown", "options"), Output("lap1-dropdown", "value")],
+    inputs=[Input("driver1-dropdown", "value")],
     state=[State("laps-store", "data")],
 )
-def update_lap_dropdowns(driver1, driver2, laps_data):
+def update_lap1_dropdown(driver1, laps_data):
     if not laps_data:
-        return [], None, [], None
+        return [], None
 
     df_laps = pd.DataFrame(laps_data)
+    lap_options, lap_value = _build_lap_options(df_laps, driver1)
+    return lap_options, lap_value
 
-    def build_options_for(driver):
-        if not driver:
-            return [], None
-        rows = df_laps[df_laps["driver_number"] == int(driver)].dropna(subset=["lap_number"]).copy()
-        if rows.empty:
-            return [], None
 
-        # Calcola la durata di ogni giro per evidenziare il piu breve
-        rows["dur_s"] = rows.apply(
-            lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
-            axis=1,
-        )
-        best_lap_num = None
-        valid = rows.dropna(subset=["dur_s"])
-        if not valid.empty:
-            best_lap_num = int(valid.loc[valid["dur_s"].idxmin()]["lap_number"])
+@callback(
+    output=[Output("lap2-dropdown", "options"), Output("lap2-dropdown", "value")],
+    inputs=[Input("driver2-dropdown", "value")],
+    state=[State("laps-store", "data")],
+)
+def update_lap2_dropdown(driver2, laps_data):
+    if not laps_data:
+        return [], None
 
-        opts = []
-        # Ordina per lap_number e crea label con durata
-        for _, r in rows.sort_values("lap_number").iterrows():
-            lap_num = int(r["lap_number"])
-            dur_s = r.get("dur_s")
-            dur_label = fmt_duration(dur_s)
-            suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
-            label = f"Lap {lap_num} — {dur_label}{suffix}"
-            opts.append({"label": label, "value": lap_num})
-        val = opts[-1]["value"] if opts else None
-        return opts, val
+    df_laps = pd.DataFrame(laps_data)
+    lap_options, lap_value = _build_lap_options(df_laps, driver2)
+    return lap_options, lap_value
 
-    lap1_options, lap1_val = build_options_for(driver1)
-    lap2_options, lap2_val = build_options_for(driver2)
 
-    return lap1_options, lap1_val, lap2_options, lap2_val
+def _build_lap_options(df_laps: pd.DataFrame, driver):
+    """Crea le opzioni dei giri per il driver indicato, evidenziando il migliore."""
+    if not driver:
+        return [], None
+    rows = df_laps[df_laps["driver_number"] == int(driver)].dropna(subset=["lap_number"]).copy()
+    if rows.empty:
+        return [], None
+
+    # Calcola la durata di ogni giro per evidenziare il piu breve
+    rows["dur_s"] = rows.apply(
+        lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
+        axis=1,
+    )
+    best_lap_num = None
+    valid = rows.dropna(subset=["dur_s"])
+    if not valid.empty:
+        best_lap_num = int(valid.loc[valid["dur_s"].idxmin()]["lap_number"])
+
+    opts = []
+    # Ordina per lap_number e crea label con durata
+    for _, r in rows.sort_values("lap_number").iterrows():
+        lap_num = int(r["lap_number"])
+        dur_s = r.get("dur_s")
+        dur_label = fmt_duration(dur_s)
+        suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
+        label = f"Lap {lap_num} — {dur_label}{suffix}"
+        opts.append({"label": label, "value": lap_num})
+    val = opts[-1]["value"] if opts else None
+    return opts, val
 
 
 @callback(
