@@ -130,7 +130,11 @@ def _build_lap_options(df_laps: pd.DataFrame, driver):
         suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
         label = f"Lap {lap_num} — {dur_label}{suffix}"
         opts.append({"label": label, "value": lap_num})
-    val = opts[-1]["value"] if opts else None
+    # Preseleziona il secondo giro disponibile se esiste, altrimenti il primo
+    if len(opts) >= 2:
+        val = opts[1]["value"]
+    else:
+        val = opts[0]["value"] if opts else None
     return opts, val
 
 

@@ -36,7 +36,7 @@ def load_meetings(n_clicks, lang, year):
         for _, row in df.iterrows()
         if pd.notna(row["meeting_key"])
     ]
-    value = options[0]["value"] if options else None
+    value = options[-1]["value"] if options else None
     status = t(lang, "meetings_loaded", count=len(options))
 
     return df.to_dict("records"), options, value, status
