@@ -12,6 +12,7 @@ import callbacks.all_laps  # noqa: E402,F401
 
 # Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente
 app = Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
 app.title = "OpenF1 - Driver Comparison"
 app.layout = create_layout()
 
