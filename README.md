@@ -87,6 +87,9 @@ utils/graph_order.py    # Ordine grafici e titoli
   ![Brake](images/brake.gif)
 - Marcia:  
   ![Gear](images/gear.gif)
+- Confronto tutti i giri (tempi/delta):  
+  ![Confronto 1](images/confronto1.png)  
+  ![Confronto 2](images/confronto2.png)
 
 ## Troubleshooting
 - Nessun car_data trovato: l'API non ha telemetria per quella sessione/giro; prova un'altra sessione.
