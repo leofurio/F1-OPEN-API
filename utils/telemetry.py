@@ -77,7 +77,10 @@ def lap_duration_seconds_from_row(lap_row: pd.Series, df: pd.DataFrame):
     de = lap_row.get("date_end")
     if ds and de:
         try:
-            return (pd.to_datetime(de) - pd.to_datetime(ds)).total_seconds()
+            ds_dt = pd.to_datetime(ds, errors="coerce", utc=True)
+            de_dt = pd.to_datetime(de, errors="coerce", utc=True)
+            if pd.notna(ds_dt) and pd.notna(de_dt):
+                return (de_dt - ds_dt).total_seconds()
         except Exception:
             pass
 

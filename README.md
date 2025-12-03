@@ -2,16 +2,15 @@
 
 Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando l'API OpenF1.
 
-> ⚠️ Nota: durante le sessioni attive (FP, Qualifiche, Gara) l'API OpenF1 nasconde i dati live: servirebbe un abbonamento per vederli in tempo reale. I dati tornano disponibili a sessione conclusa.
+> Nota: durante le sessioni attive (FP, Qualifiche, Gara) l'API OpenF1 nasconde i dati live: servirebbe un abbonamento per vederli in tempo reale. I dati tornano disponibili a sessione conclusa.
 
 ## Cosa fa
-- Flusso: Anno → Circuito → Sessione → Pilota/Giro 1 e 2 → Grafici.
-- Sette grafici sincronizzati: Tracciato GPS, Delta tempo, Velocità, Heatmap Velocità, Throttle, Brake, Marcia.
-- **Click** sui grafici di telemetria aggiunge linea verticale, aggiorna tutti i grafici e piazza un marker sul tracciato (tempo mostrato come hh:mm:ss.sss).
+- Flusso: Anno > Circuito > Sessione > Pilota/Giro 1 e 2 > Grafici.
+- Due tab: **Telemetria giro** (7 grafici sincronizzati) e **Confronto tutti i giri** (tempi e delta giro-giro tra due piloti).
+- Telemetria: Tracciato GPS, Delta tempo, Velocita, Heatmap Velocita, Throttle, Brake, Marcia; click sui grafici di telemetria aggiunge linea verticale e marker sul tracciato (hh:mm:ss.sss).
 - Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico.
 - Cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
-- Spinner di caricamento sui grafici durante gli update.
-- Pulsante "Stampa PDF" per esportare la pagina formattata.
+- Spinner di caricamento sui grafici durante gli update e pulsante "Stampa PDF".
 
 ## Dipendenze
 ```bash
@@ -35,9 +34,10 @@ api/openf1.py           # Wrapper API OpenF1
 components/layout.py    # Layout HTML e componenti (store, controlli, grafici)
 callbacks/meetings.py   # Caricamento circuiti e sessioni
 callbacks/drivers.py    # Caricamento piloti e giri; sync dropdown
-callbacks/graphs.py     # Genera 6 grafici + selezione tempo via hover/click
+callbacks/graphs.py     # Grafici di telemetria + selezione tempo via click
 callbacks/cache.py      # Stato e reset cache
 callbacks/graph_order.py# Gestione ordine grafici e rendering dinamico
+callbacks/all_laps.py   # Grafici di confronto su tutti i giri della sessione
 utils/telemetry.py      # Calcolo delta, durata, formattazione
 utils/cache.py          # Cache file-based JSON
 utils/graph_order.py    # Ordine grafici e titoli
@@ -47,18 +47,19 @@ utils/graph_order.py    # Ordine grafici e titoli
 1) Inserisci l'anno e clicca "Carica Circuiti".  
 2) Scegli circuito e sessione.  
 3) Seleziona Pilota 1 e 2 e i rispettivi giri.  
-4) Click su speed/throttle/brake/gear per fissare un tempo: si aggiorna la linea verticale, compaiono i marker sul tracciato e gli altri grafici si allineano (tempo formattato hh:mm:ss.sss).  
-5) Cambia l'ordine dei grafici con il radio e i pulsanti su/giu/reset; la pagina si aggiorna istantaneamente.  
-6) Pulisci la cache con il pulsante dedicato se vuoi ricaricare dati freschi.
+4) Tab Telemetria: click su speed/throttle/brake/gear per fissare un tempo, si aggiorna la linea verticale, compaiono i marker sul tracciato e gli altri grafici si allineano (tempo hh:mm:ss.sss).  
+5) Tab Confronto tutti i giri: vedi andamento dei tempi giro e delta tra i due piloti su tutti i lap disponibili.  
+6) Cambia l'ordine dei grafici con radio e pulsanti su/giu/reset; la pagina si aggiorna istantaneamente.  
+7) Pulisci la cache con il pulsante dedicato se vuoi ricaricare dati freschi.  
 
 ## Grafici (titolo legenda)
-- Tracciato GPS · P1 vs P2  
-- Delta tempo · P2 vs P1  
-- Velocità · …  
-- Heatmap Velocità · …  
-- Throttle · …  
-- Brake · …  
-- Marcia · …
+- Tracciato GPS - P1 vs P2  
+- Delta tempo - P2 vs P1  
+- Velocita  
+- Heatmap Velocita  
+- Throttle  
+- Brake  
+- Marcia  
 
 ## Note tecniche
 - Dati normalizzati con tempo relativo da inizio giro (`t_rel_s`).
@@ -67,13 +68,33 @@ utils/graph_order.py    # Ordine grafici e titoli
 - I `dcc.Store` mantengono state e cache locale; `utils/cache.py` gestisce pulizia e dimensione.
 - Spinner via `dcc.Loading` su container e singoli grafici.
 
+## Screenshots / GIF
+- Flusso ricerca anno/circuito/sessione:  
+  ![Search](images/Search.gif)
+- Riordino grafici:  
+  ![Move](images/move.gif)
+- Tracciato GPS:  
+  ![Track](images/track.gif)
+- Delta tempo:  
+  ![Delta](images/delta.gif)
+- Velocita:  
+  ![Velocita](images/velocita.gif)
+- Heatmap velocita:  
+  ![Heatmap](images/heat.gif)
+- Throttle:  
+  ![Throttle](images/throt.gif)
+- Brake:  
+  ![Brake](images/brake.gif)
+- Marcia:  
+  ![Gear](images/gear.gif)
+
 ## Troubleshooting
 - Nessun car_data trovato: l'API non ha telemetria per quella sessione/giro; prova un'altra sessione.
 - Dropdown vuoti/lenti: attendi qualche secondo; controlla la connessione.
 - Marker non appare: il click/hover deve avvenire su speed/throttle/brake/gear, non sul tracciato.
-- Errore “nonexistent object … speed-graph”: usa la versione con seed grafici nel layout.
+- Errore “nonexistent object” speed-graph: usa la versione con seed grafici nel layout.
 
 ---
 Autore: Leonardo Furio  
-Ultimo aggiornamento: 30 novembre 2025  
-Versione: 1.2 (spinner e sincronizzazione click)
+Ultimo aggiornamento: 03 dicembre 2025  
+Versione: 1.3 (tab confronto tutti i giri + screenshots)

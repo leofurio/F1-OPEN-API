@@ -2,16 +2,17 @@ from dash import Dash
 from components.layout import create_layout
 
 # Import callbacks per registrarli
-import callbacks.meetings
-import callbacks.drivers
-import callbacks.graphs
-import callbacks.cache
-import callbacks.graph_order
-import callbacks.print_callback
+import callbacks.meetings  # noqa: E402,F401
+import callbacks.drivers  # noqa: E402,F401
+import callbacks.graphs  # noqa: E402,F401
+import callbacks.cache  # noqa: E402,F401
+import callbacks.graph_order  # noqa: E402,F401
+import callbacks.print_callback  # noqa: E402,F401
+import callbacks.all_laps  # noqa: E402,F401
 
 # Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente
 app = Dash(__name__, suppress_callback_exceptions=True)
-app.title = "OpenF1 – Driver Comparison"
+app.title = "OpenF1 - Driver Comparison"
 app.layout = create_layout()
 
 if __name__ == "__main__":

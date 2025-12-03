@@ -9,8 +9,8 @@ def create_layout():
     return html.Div(
         style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
         children=[
-            html.H1("OpenF1 – Driver Comparison Dashboard"),
-            html.P("Flusso: Anno → Circuito → Session → Drivers → Lap → Telemetria + Location + Delta time."),
+            html.H1("OpenF1 - Driver Comparison Dashboard"),
+            html.P("Flusso: Anno > Circuito > Sessione > Drivers > Lap > Telemetria + Location + Delta time."),
 
             html.Hr(),
 
@@ -29,7 +29,7 @@ def create_layout():
                                 value=current_year,   # prevalorizzato con anno corrente
                                 style={"width": "100%"},
                             ),
-                            html.Button( 
+                            html.Button(
                                 "Carica Circuiti",
                                 id="load-meetings-btn",
                                 n_clicks=0,
@@ -87,79 +87,114 @@ def create_layout():
                 ],
             ),
 
-            # Pulsante reset ordine grafici
-            html.Div(
-                style={"display": "flex", "gap": "12px", "alignItems": "center", "marginBottom": "15px"},
-                children=[
-                    html.Div(
-                        children=[
-                            html.Label("Ordine grafici:"),
-                            dcc.RadioItems(
-                                id="graph-order-radio",
-                                options=[{"label": GRAPH_TITLES[g], "value": g} for g in DEFAULT_GRAPH_ORDER],
-                                value=DEFAULT_GRAPH_ORDER[0],
-                                labelStyle={"display": "block", "margin": "4px 0"},
-                                inputStyle={"marginRight": "8px"},
-                            ),
-                        ],
-                        style={"minWidth": "220px"},
-                    ),
-                    html.Div(
-                        style={"display": "flex", "flexDirection": "column", "gap": "8px"},
-                        children=[
-                            html.Button("↑ Move Up", id="move-up-btn", n_clicks=0),
-                            html.Button("↓ Move Down", id="move-down-btn", n_clicks=0),
-                            html.Button("🔄 Reset ordine", id="reset-graph-order-btn", n_clicks=0),
-                        ],
-                    ),
-                    html.Div(id="graph-order-msg", style={"color": "#555", "marginLeft": "12px"}),
-                ],
-            ),
-
-            # Store per ordine grafici
-            dcc.Store(id="graph-order-store", data=DEFAULT_GRAPH_ORDER),
-
-            # Store per cache
+            # Store per cache e stato condiviso
             dcc.Store(id="meetings-store"),
             dcc.Store(id="sessions-store"),
             dcc.Store(id="laps-store"),
             dcc.Store(id="drivers-store"),
             dcc.Store(id="selected-time-store"),
+            dcc.Store(id="graph-order-store", data=DEFAULT_GRAPH_ORDER),
 
             html.Hr(),
 
-            html.Div(
-                style={"marginBottom": "12px"},
+            dcc.Tabs(
+                id="page-tabs",
+                value="telemetry",
                 children=[
-                    html.Button("Stampa PDF", id="print-btn", n_clicks=0),
-                ],
-            ),
-            html.Div(id="print-trigger", style={"display": "none"}),
+                    dcc.Tab(
+                        label="Telemetria giro",
+                        value="telemetry",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "gap": "12px", "alignItems": "center", "marginBottom": "15px"},
+                                children=[
+                                    html.Div(
+                                        children=[
+                                            html.Label("Ordine grafici:"),
+                                            dcc.RadioItems(
+                                                id="graph-order-radio",
+                                                options=[{"label": GRAPH_TITLES[g], "value": g} for g in DEFAULT_GRAPH_ORDER],
+                                                value=DEFAULT_GRAPH_ORDER[0],
+                                                labelStyle={"display": "block", "margin": "4px 0"},
+                                                inputStyle={"marginRight": "8px"},
+                                            ),
+                                        ],
+                                        style={"minWidth": "220px"},
+                                    ),
+                                    html.Div(
+                                        style={"display": "flex", "flexDirection": "column", "gap": "8px"},
+                                        children=[
+                                            html.Button("Move Up", id="move-up-btn", n_clicks=0),
+                                            html.Button("Move Down", id="move-down-btn", n_clicks=0),
+                                            html.Button("Reset ordine", id="reset-graph-order-btn", n_clicks=0),
+                                        ],
+                                    ),
+                                    html.Div(id="graph-order-msg", style={"color": "#555", "marginLeft": "12px"}),
+                                ],
+                            ),
 
-            # Contenitore grafici con spinner durante l'update
-            dcc.Loading(
-                id="graphs-loading",
-                type="circle",
-                color="#555",
-                children=html.Div(
-                    id="graphs-container",
-                    style={"display": "flex", "flexDirection": "column", "gap": "20px"},
-                    # Seed iniziale per evitare errori di validazione prima del callback
-                    children=[
-                        html.Div(
-                            [
-                                html.H3(GRAPH_TITLES.get(graph_id, graph_id), style={"marginBottom": "6px"}),
-                                dcc.Loading(
-                                    type="circle",
-                                    color="#555",
-                                    children=dcc.Graph(id=graph_id),
+                            html.Div(
+                                style={"marginBottom": "12px"},
+                                children=[
+                                    html.Button("Stampa PDF", id="print-btn", n_clicks=0),
+                                ],
+                            ),
+                            html.Div(id="print-trigger", style={"display": "none"}),
+
+                            # Contenitore grafici con spinner durante l'update
+                            dcc.Loading(
+                                id="graphs-loading",
+                                type="circle",
+                                color="#555",
+                                children=html.Div(
+                                    id="graphs-container",
+                                    style={"display": "flex", "flexDirection": "column", "gap": "20px"},
+                                    # Seed iniziale per evitare errori di validazione prima del callback
+                                    children=[
+                                        html.Div(
+                                            [
+                                                html.H3(GRAPH_TITLES.get(graph_id, graph_id), style={"marginBottom": "6px"}),
+                                                dcc.Loading(
+                                                    type="circle",
+                                                    color="#555",
+                                                    children=dcc.Graph(id=graph_id),
+                                                ),
+                                            ],
+                                            style={"display": "flex", "flexDirection": "column", "gap": "6px"},
+                                        )
+                                        for graph_id in DEFAULT_GRAPH_ORDER
+                                    ],
                                 ),
-                            ],
-                            style={"display": "flex", "flexDirection": "column", "gap": "6px"},
-                        )
-                        for graph_id in DEFAULT_GRAPH_ORDER
-                    ],
-                ),
+                            ),
+                        ],
+                    ),
+                    dcc.Tab(
+                        label="Confronto tutti i giri",
+                        value="all-laps",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+                                children=[
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=html.Div(id="all-laps-summary"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="all-laps-times-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="all-laps-delta-graph"),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
             ),
         ],
     )
