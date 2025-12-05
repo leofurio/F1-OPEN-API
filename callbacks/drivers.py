@@ -128,7 +128,7 @@ def _build_lap_options(df_laps: pd.DataFrame, driver):
         dur_s = r.get("dur_s")
         dur_label = fmt_duration(dur_s)
         suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
-        label = f"Lap {lap_num} — {dur_label}{suffix}"
+        label = f"Lap {lap_num} - {dur_label}{suffix}"
         opts.append({"label": label, "value": lap_num})
     # Preseleziona il secondo giro disponibile se esiste, altrimenti il primo
     if len(opts) >= 2:
@@ -153,12 +153,12 @@ def _build_lap_options(df_laps: pd.DataFrame, driver):
     ],
 )
 def show_fastest_lap(driver1, lap1, driver2, lap2, lang, laps_data, drivers_data):
-    """Mostra quale giro selezionato e piu veloce tra i due piloti."""
+    """Mostra il miglior giro di sessione per i due piloti selezionati (indipendente dai giri scelti)."""
     lang = lang or LANG_DEFAULT
     if not laps_data:
         return ""
 
-    if not driver1 or not driver2 or not lap1 or not lap2:
+    if not driver1 or not driver2:
         return t(lang, "laps_select_two")
 
     df_laps = pd.DataFrame(laps_data)
@@ -179,25 +179,31 @@ def show_fastest_lap(driver1, lap1, driver2, lap2, lang, laps_data, drivers_data
             return f"#{int(num)} - {full_name}"
         return f"Driver #{int(num)}"
 
-    def pick_row(driver_num, lap_num):
-        rows = df_laps[
-            (df_laps["driver_number"] == int(driver_num))
-            & (df_laps["lap_number"] == int(lap_num))
-        ]
-        return rows.iloc[0] if not rows.empty else None
+    def best_lap(driver_num):
+        """Ritorna (lap_number, durata_s) del miglior giro del driver nella sessione."""
+        rows = df_laps[df_laps["driver_number"] == int(driver_num)].dropna(subset=["lap_number"]).copy()
+        if rows.empty:
+            return None
+        rows["dur_s"] = rows.apply(
+            lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
+            axis=1,
+        )
+        rows = rows.dropna(subset=["dur_s"])
+        if rows.empty:
+            return None
+        best_row = rows.loc[rows["dur_s"].idxmin()]
+        return int(best_row["lap_number"]), float(best_row["dur_s"])
 
-    lap1_row = pick_row(driver1, lap1)
-    lap2_row = pick_row(driver2, lap2)
-    if lap1_row is None or lap2_row is None:
+    best1 = best_lap(driver1)
+    best2 = best_lap(driver2)
+    if best1 is None or best2 is None:
         return t(lang, "lap_unavailable")
 
-    dur1_s = lap_duration_seconds_from_row(lap1_row, pd.DataFrame())
-    dur2_s = lap_duration_seconds_from_row(lap2_row, pd.DataFrame())
-    if pd.isna(dur1_s) or pd.isna(dur2_s):
-        return t(lang, "lap_unavailable")
+    lap1_num, dur1_s = best1
+    lap2_num, dur2_s = best2
 
-    label1 = f"{driver_name(int(driver1))} - Lap {lap1}"
-    label2 = f"{driver_name(int(driver2))} - Lap {lap2}"
+    label1 = f"{driver_name(int(driver1))} - Lap {lap1_num}"
+    label2 = f"{driver_name(int(driver2))} - Lap {lap2_num}"
 
     delta = abs(dur1_s - dur2_s)
     delta_str = fmt_duration(delta)
