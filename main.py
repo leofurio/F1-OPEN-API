@@ -9,6 +9,7 @@ import callbacks.cache  # noqa: E402,F401
 import callbacks.graph_order  # noqa: E402,F401
 import callbacks.print_callback  # noqa: E402,F401
 import callbacks.all_laps  # noqa: E402,F401
+import callbacks.best_laps  # noqa: E402,F401
 import callbacks.i18n  # noqa: E402,F401
 
 # Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente

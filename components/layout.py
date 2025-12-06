@@ -194,7 +194,7 @@ def create_layout():
                     ),
                     dcc.Tab(
                         id="tab-all-laps",
-                        label="Confronto tutti i giri",
+                        label="Confronto giri (2 piloti)",
                         value="all-laps",
                         children=[
                             html.Div(
@@ -223,6 +223,23 @@ def create_layout():
                                             style={"width": "100%"},
                                             config={"responsive": True},
                                         ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    dcc.Tab(
+                        id="tab-best-laps",
+                        label="Miglior giro per pilota",
+                        value="best-laps",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "flexDirection": "column", "gap": "12px", "marginTop": "14px"},
+                                children=[
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=html.Div(id="best-laps-table"),
                                     ),
                                 ],
                             ),
