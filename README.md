@@ -6,7 +6,7 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 
 ## Cosa fa
 - Flusso: Anno > Circuito > Sessione > Pilota/Giro 1 e 2 > Grafici.
-- Due tab: **Telemetria giro** (7 grafici sincronizzati) e **Confronto tutti i giri** (tempi e delta giro-giro tra due piloti).
+- Tre tab: **Telemetria giro** (7 grafici sincronizzati), **Confronto giri (2 piloti)** (tempi e delta giro-giro tra due piloti) e **Miglior giro per pilota** (tabella con best lap/settori per tutta la sessione).
 - Telemetria: Tracciato GPS, Delta tempo, Velocita, Heatmap Velocita, Throttle, Brake, Marcia; click sui grafici di telemetria aggiunge linea verticale e marker sul tracciato (hh:mm:ss.sss).
 - Confronto giri: heatmap tempi con tempi migliori per lap in grassetto, colonna delta e colonna delta cumulativo (entrambe non colorate) più grafici linea/bar per tempi e delta.
 - Multilingua: selettore Italiano/English in alto, testi e messaggi tradotti (default Italiano).
@@ -99,6 +99,8 @@ utils/graph_order.py    # Ordine grafici e titoli
   ![Confronto 2](images/confronto2.png)
 - Confronto giri con delta cumulativo:  
   ![Heatmap tempi + delta cumulativo](images/lapsconfrontodelta.png)
+- Tabella tempi (Miglior giro per pilota):  
+  ![Tabella tempi](images/tabellatempi.png)
 
 ## Troubleshooting
 - Nessun car_data trovato: l'API non ha telemetria per quella sessione/giro; prova un'altra sessione.
