@@ -28,6 +28,7 @@ def _build_table(rows: list[str | html.Tr], lang: str):
     header = html.Thead(
         html.Tr(
             [
+                html.Th(t(lang, "best_laps_pos"), style=header_cell_style),
                 html.Th(t(lang, "best_laps_driver"), style=header_cell_style),
                 html.Th(t(lang, "best_laps_lap"), style=header_cell_style),
                 html.Th(t(lang, "best_laps_time"), style=header_cell_style),
@@ -130,13 +131,14 @@ def render_best_laps(session_key, lang, laps_data, drivers_data):
         return text
 
     table_rows = []
-    for _, row in best_df.iterrows():
+    for idx, (_, row) in enumerate(best_df.iterrows(), start=1):
         gap = row["lap_time_s"] - session_best
         gap_str = "+" + fmt_duration(gap) if gap > 1e-6 else t(lang, "best_laps_fastest")
         cell_style = {"padding": "8px 10px"}
         table_rows.append(
             html.Tr(
                 [
+                    html.Td(idx, style=cell_style),
                     html.Td(_driver_label(int(row["driver_number"]), df_drivers), style=cell_style),
                     html.Td(int(row["lap_number"]), style=cell_style),
                     html.Td(fmt_duration(row["lap_time_s"]), style=cell_style),
