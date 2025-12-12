@@ -229,6 +229,55 @@ def create_layout():
                         ],
                     ),
                     dcc.Tab(
+                        id="tab-strategy",
+                        label="Strategia gomme",
+                        value="strategy",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+                                children=[
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=html.Div(id="strategy-summary"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="stints-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="pitstop-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="degradation-graph"),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    dcc.Tab(
+                        id="tab-ranking",
+                        label="Classifica giri",
+                        value="ranking",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+                                children=[
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="ranking-graph"),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    dcc.Tab(
                         id="tab-best-laps",
                         label="Miglior giro per pilota",
                         value="best-laps",

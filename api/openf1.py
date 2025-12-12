@@ -71,6 +71,38 @@ def fetch_drivers(session_key: int) -> pd.DataFrame:
     return df
 
 
+def fetch_stints(session_key: int) -> pd.DataFrame:
+    """Recupera le info stint (compound, lap start/end) per una sessione."""
+    params = {"session_key": session_key}
+    url = f"{BASE_URL}/stints"
+    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
+    resp.raise_for_status()
+    data = resp.json()
+    if not data:
+        return pd.DataFrame()
+    df = pd.DataFrame(data)
+    for col in ["driver_number", "stint_number", "compound", "lap_start", "lap_end", "tyre_life", "new"]:
+        if col not in df.columns:
+            df[col] = None
+    return df
+
+
+def fetch_pitstops(session_key: int) -> pd.DataFrame:
+    """Recupera i pit stop per una sessione."""
+    params = {"session_key": session_key}
+    url = f"{BASE_URL}/pit"
+    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
+    resp.raise_for_status()
+    data = resp.json()
+    if not data:
+        return pd.DataFrame()
+    df = pd.DataFrame(data)
+    for col in ["driver_number", "lap_number", "pit_duration", "pit_duration_ms"]:
+        if col not in df.columns:
+            df[col] = None
+    return df
+
+
 def fetch_car_data_for_lap(session_key: int,
                            driver_number: int,
                            lap_row: pd.Series) -> pd.DataFrame:
