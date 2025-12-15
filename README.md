@@ -6,12 +6,13 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 
 ## Cosa fa
 - Flusso: Anno > Circuito > Sessione > Pilota/Giro 1 e 2 > Grafici.
-- Tre tab: **Telemetria giro** (7 grafici sincronizzati), **Confronto giri (2 piloti)** (tempi e delta giro-giro tra due piloti) e **Miglior giro per pilota** (tabella con best lap/settori per tutta la sessione).
+- Cinque tab: **Telemetria giro** (7 grafici sincronizzati), **Confronto giri (2 piloti)** (tempi e delta giro-giro), **Miglior giro per pilota** (tabella best lap/settori), **Strategia gomme/pit** (stint timeline, pit stop, degrado tempi) e **Classifica giri** (posizione per giro, con fallback calcolato dai tempi).
 - Telemetria: Tracciato GPS, Delta tempo, Velocita, Heatmap Velocita, Throttle, Brake, Marcia; click sui grafici di telemetria aggiunge linea verticale e marker sul tracciato (hh:mm:ss.sss).
-- Confronto giri: heatmap tempi con tempi migliori per lap in grassetto, colonna delta e colonna delta cumulativo (entrambe non colorate) più grafici linea/bar per tempi e delta.
+- Confronto giri: heatmap tempi con migliori per lap in grassetto, colonna delta e colonna delta cumulativo non colorate piu grafici linea/bar per tempi e delta.
+- Strategia: timeline stint con compound colorati, grafico pit stop con durata, grafico performance/degrado per lap con colori per compound.
+- Classifica: posizione giro per giro per tutti i piloti disponibili (se manca la posizione, viene stimata dai tempi cumulati).
 - Multilingua: selettore Italiano/English in alto, testi e messaggi tradotti (default Italiano).
-- Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico.
-- Cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
+- Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico e cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
 - Spinner di caricamento sui grafici durante gli update e pulsante "Stampa PDF".
 
 ## Dipendenze
@@ -23,7 +24,7 @@ pip install requests pandas dash plotly numpy
 
 ## Avvio rapido (Windows)
 ```powershell
-cd "c:\F1 OPEN API"
+cd "C:\Users\<user>\F1-OPEN-API"  # sostituisci con il path del repo
 python main.py
 # poi apri http://127.0.0.1:8050
 ```
@@ -31,7 +32,7 @@ python main.py
 
 ## Lingue
 - Selettore in alto a destra: Italiano (default) o English.
-- Tradotti titoli, etichette, pulsanti e messaggi di stato/grafici principali.
+- Tradotti titoli, etichette, pulsanti e messaggi di stato/grafici principali tramite `utils/i18n.py` e callback `callbacks/i18n.py`.
 
 ## Struttura
 ```
@@ -45,9 +46,14 @@ callbacks/graphs.py     # Grafici di telemetria + selezione tempo via click
 callbacks/cache.py      # Stato e reset cache
 callbacks/graph_order.py# Gestione ordine grafici e rendering dinamico
 callbacks/all_laps.py   # Grafici di confronto su tutti i giri della sessione
+callbacks/best_laps.py  # Tabella miglior giro per pilota
+callbacks/strategy.py   # Strategia gomme/pit/degrado
+callbacks/ranking.py    # Classifica giro per giro (posizione)
+callbacks/i18n.py       # Sincronizza testi/etichette con lingua selezionata
 utils/telemetry.py      # Calcolo delta, durata, formattazione
 utils/cache.py          # Cache file-based JSON
 utils/graph_order.py    # Ordine grafici e titoli
+utils/i18n.py           # Dizionario traduzioni IT/EN
 ```
 
 ## Come usarla
@@ -56,17 +62,16 @@ utils/graph_order.py    # Ordine grafici e titoli
 3) Seleziona Pilota 1 e 2 e i rispettivi giri.  
 4) Tab Telemetria: click su speed/throttle/brake/gear per fissare un tempo, si aggiorna la linea verticale, compaiono i marker sul tracciato e gli altri grafici si allineano (tempo hh:mm:ss.sss).  
 5) Tab Confronto tutti i giri: vedi andamento dei tempi giro e delta tra i due piloti su tutti i lap disponibili.  
-6) Cambia l'ordine dei grafici con radio e pulsanti su/giu/reset; la pagina si aggiorna istantaneamente.  
-7) Pulisci la cache con il pulsante dedicato se vuoi ricaricare dati freschi.  
+6) Tab Strategia: controlla stint/compound, durata pit e degrado tempi giro con colori per compound.  
+7) Tab Classifica: guarda la posizione giro per giro (se mancano dati di posizione, viene calcolata dai tempi).  
+8) Cambia l'ordine dei grafici con radio e pulsanti su/giu/reset; la pagina si aggiorna istantaneamente.  
+9) Pulisci la cache con il pulsante dedicato se vuoi ricaricare dati freschi.  
 
 ## Grafici (titolo legenda)
-- Tracciato GPS - P1 vs P2  
-- Delta tempo - P2 vs P1  
-- Velocita  
-- Heatmap Velocita  
-- Throttle  
-- Brake  
-- Marcia  
+- Telemetria: Tracciato GPS - P1 vs P2; Delta tempo - P2 vs P1; Velocita; Heatmap Velocita; Throttle; Brake; Marcia.  
+- Confronto giri: heatmap tempi con delta/delta cumulativo piu grafici linea/bar dei tempi.  
+- Strategia: timeline stint/compound, pit stop con durata, degrado tempi giro colorato per compound.  
+- Classifica: posizione per giro per tutti i piloti presenti nei dati della sessione.  
 
 ## Note tecniche
 - Dati normalizzati con tempo relativo da inizio giro (`t_rel_s`).
@@ -74,6 +79,8 @@ utils/graph_order.py    # Ordine grafici e titoli
 - Se `date_end` manca viene stimata (fallback 2 minuti) per calcolare la durata giro.
 - I `dcc.Store` mantengono state e cache locale; `utils/cache.py` gestisce pulizia e dimensione.
 - Spinner via `dcc.Loading` su container e singoli grafici.
+- Classifica: se la sessione non fornisce la posizione giro, viene calcolata da tempi cumulati per ogni driver.
+- Strategia: i colori compound usano codifica Soft/Medium/Hard/Inter/Wet; degrado colorato per compound per lap.
 
 ## Screenshots / GIF
 - Flusso ricerca anno/circuito/sessione:  
@@ -106,18 +113,18 @@ utils/graph_order.py    # Ordine grafici e titoli
 - Nessun car_data trovato: l'API non ha telemetria per quella sessione/giro; prova un'altra sessione.
 - Dropdown vuoti/lenti: attendi qualche secondo; controlla la connessione.
 - Marker non appare: il click/hover deve avvenire su speed/throttle/brake/gear, non sul tracciato.
-- Errore “nonexistent object” speed-graph: usa la versione con seed grafici nel layout.
+- Errore "nonexistent object" speed-graph: usa la versione con seed grafici nel layout.
 
 ---
 Autore: Leonardo Furio  
-Ultimo aggiornamento: 03 dicembre 2025  
-Versione: 1.5 (multilingua IT/EN + heatmap delta cumulativo)
+Ultimo aggiornamento: 12 dicembre 2025  
+Versione: 1.6 (strategia gomme/pit, classifica giri, multilingua)
 
 ---
 
 ## English (short version)
 - Dash app to compare two drivers using OpenF1; flow: Year > Circuit > Session > Driver/Lap 1&2 > Telemetry + All-lap comparison.
-- Tabs: Lap telemetry (7 synced charts) and All-laps (times, delta, heatmap with delta & cumulative delta).
+- Tabs: Lap telemetry (7 synced charts), All-laps (times, delta, heatmap with delta & cumulative delta), Best lap per driver (table), Tyre strategy/pits (stints, pit stops, degradation), Lap ranking (per-lap position or computed from times).
 - Language toggle (top right): Italian / English, default Italian.
 - Quick start: `python main.py` then open `http://127.0.0.1:8050`.
-- New screenshot: `images/lapsconfrontodelta.png` shows the all-laps heatmap with delta and cumulative delta.
+- New features: tyre strategy, lap ranking, refreshed IT/EN copy, keep screenshot refs for telemetria/all-laps/best-lap.
