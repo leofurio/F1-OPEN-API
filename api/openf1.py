@@ -3,6 +3,42 @@ import pandas as pd
 from urllib.parse import urlencode
 from datetime import timedelta
 from config import BASE_URL, API_TIMEOUT, DEFAULT_LAP_DURATION_MINUTES
+from utils.cache import get_cache_key, load_from_cache, save_to_cache
+
+
+def _build_dataframe(data, required_columns: list[str]) -> pd.DataFrame:
+    """Converte il payload API in DataFrame garantendo le colonne richieste."""
+    if not data:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(data)
+    for col in required_columns:
+        if col not in df.columns:
+            df[col] = None
+    return df
+
+
+def _fetch_json(endpoint: str, params: dict | None = None, cache_suffix: str | None = None):
+    """Recupera un endpoint OpenF1 usando cache file-based."""
+    params = params or {}
+    cache_key = get_cache_key(endpoint, **params, cache_suffix=cache_suffix or "base")
+    cached_data = load_from_cache(cache_key)
+    if cached_data is not None:
+        return cached_data
+
+    url = f"{BASE_URL}/{endpoint.strip('/')}"
+    if cache_suffix:
+        query_string = urlencode(params)
+        separator = '&' if query_string else ''
+        full_url = f"{url}?{query_string}{separator}{cache_suffix}"
+        resp = requests.get(full_url, timeout=API_TIMEOUT)
+    else:
+        resp = requests.get(url, params=params, timeout=API_TIMEOUT)
+    resp.raise_for_status()
+
+    data = resp.json()
+    save_to_cache(cache_key, data)
+    return data
 
 
 def fetch_meetings(year: int | None = None) -> pd.DataFrame:
@@ -10,97 +46,46 @@ def fetch_meetings(year: int | None = None) -> pd.DataFrame:
     params = {}
     if year:
         params["year"] = year
-    url = f"{BASE_URL}/meetings"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["meeting_key", "year", "country_name", "meeting_name"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("meetings", params=params)
+    return _build_dataframe(data, ["meeting_key", "year", "country_name", "meeting_name"])
 
 
 def fetch_sessions(meeting_key: int) -> pd.DataFrame:
     """Recupera le sessioni per un meeting."""
     params = {"meeting_key": meeting_key}
-    url = f"{BASE_URL}/sessions"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["session_key", "session_name", "session_type"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("sessions", params=params)
+    return _build_dataframe(data, ["session_key", "session_name", "session_type"])
 
 
 def fetch_laps(session_key: int) -> pd.DataFrame:
     """Recupera i giri per una sessione."""
     params = {"session_key": session_key}
-    url = f"{BASE_URL}/laps"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["driver_number", "lap_number", "date_start", "date_end"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("laps", params=params)
+    return _build_dataframe(data, ["driver_number", "lap_number", "date_start", "date_end"])
 
 
 def fetch_drivers(session_key: int) -> pd.DataFrame:
     """Recupera i piloti per una sessione."""
     params = {"session_key": session_key}
-    url = f"{BASE_URL}/drivers"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["driver_number", "full_name", "name_acronym", "team_name"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("drivers", params=params)
+    return _build_dataframe(data, ["driver_number", "full_name", "name_acronym", "team_name"])
 
 
 def fetch_stints(session_key: int) -> pd.DataFrame:
     """Recupera le info stint (compound, lap start/end) per una sessione."""
     params = {"session_key": session_key}
-    url = f"{BASE_URL}/stints"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["driver_number", "stint_number", "compound", "lap_start", "lap_end", "tyre_life", "new"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("stints", params=params)
+    return _build_dataframe(
+        data,
+        ["driver_number", "stint_number", "compound", "lap_start", "lap_end", "tyre_life", "new"],
+    )
 
 
 def fetch_pitstops(session_key: int) -> pd.DataFrame:
     """Recupera i pit stop per una sessione."""
     params = {"session_key": session_key}
-    url = f"{BASE_URL}/pit"
-    resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
-    if not data:
-        return pd.DataFrame()
-    df = pd.DataFrame(data)
-    for col in ["driver_number", "lap_number", "pit_duration", "pit_duration_ms"]:
-        if col not in df.columns:
-            df[col] = None
-    return df
+    data = _fetch_json("pit", params=params)
+    return _build_dataframe(data, ["driver_number", "lap_number", "pit_duration", "pit_duration_ms"])
 
 
 def fetch_car_data_for_lap(session_key: int,
@@ -124,16 +109,11 @@ def fetch_car_data_for_lap(session_key: int,
         "session_key": session_key,
         "driver_number": driver_number,
     }
-
-    url = f"{BASE_URL}/car_data"
-    query_string = urlencode(params)
-    query_string += f"&date>{date_start}&date<{date_end}"
-    full_url = f"{url}?{query_string}"
+    date_filter = f"date>{date_start}&date<{date_end}"
+    full_url = f"{BASE_URL}/car_data?{urlencode(params)}&{date_filter}"
     print(f"🔗 Query URL (car_data): {full_url}")
 
-    resp = requests.get(full_url, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
+    data = _fetch_json("car_data", params=params, cache_suffix=date_filter)
 
     if not data:
         print(f"⚠ Nessun car_data trovato per driver {driver_number}")
@@ -179,16 +159,11 @@ def fetch_location_for_lap(session_key: int,
         "session_key": session_key,
         "driver_number": driver_number,
     }
-
-    url = f"{BASE_URL}/location"
-    query_string = urlencode(params)
-    query_string += f"&date>{date_start}&date<{date_end}"
-    full_url = f"{url}?{query_string}"
+    date_filter = f"date>{date_start}&date<{date_end}"
+    full_url = f"{BASE_URL}/location?{urlencode(params)}&{date_filter}"
     print(f"🔗 Query URL (location): {full_url}")
 
-    resp = requests.get(full_url, timeout=API_TIMEOUT)
-    resp.raise_for_status()
-    data = resp.json()
+    data = _fetch_json("location", params=params, cache_suffix=date_filter)
     if not data:
         print(f"⚠ Nessun location trovato per driver {driver_number}")
         return pd.DataFrame()
