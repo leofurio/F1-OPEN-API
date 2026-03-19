@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 CACHE_DIR = Path("cache")
-CACHE_EXPIRY_HOURS = 2  # cache scade dopo 2 ore
+CACHE_EXPIRY_HOURS = 6  # cache scade dopo 6 ore
 
 
 def init_cache():

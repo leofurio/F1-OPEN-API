@@ -12,7 +12,7 @@ Dashboard Dash per comparare la telemetria di due piloti su giri diversi usando 
 - Strategia: timeline stint con compound colorati, grafico pit stop con durata, grafico performance/degrado per lap con colori per compound.
 - Classifica: posizione giro per giro per tutti i piloti disponibili (se manca la posizione, viene stimata dai tempi cumulati).
 - Multilingua: selettore Italiano/English in alto, testi e messaggi tradotti (default Italiano).
-- Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico e cache locale delle risposte API; pulsante per svuotare la cache con stato mostrato.
+- Ordine grafici personalizzabile (radio + pulsanti su/giu/reset) con rendering dinamico e cache locale file-based delle risposte API (durata 6 ore per chiamata); pulsante per svuotare la cache con stato mostrato.
 - Spinner di caricamento sui grafici durante gli update e pulsante "Stampa PDF".
 
 ## Dipendenze
@@ -77,7 +77,7 @@ utils/i18n.py           # Dizionario traduzioni IT/EN
 - Dati normalizzati con tempo relativo da inizio giro (`t_rel_s`).
 - Delta tempo interpolato a 200 punti per giri di durata diversa.
 - Se `date_end` manca viene stimata (fallback 2 minuti) per calcolare la durata giro.
-- I `dcc.Store` mantengono state e cache locale; `utils/cache.py` gestisce pulizia e dimensione.
+- I `dcc.Store` mantengono lo state UI; `utils/cache.py` gestisce una cache file-based delle chiamate API con TTL di 6 ore, oltre a pulizia e dimensione.
 - Spinner via `dcc.Loading` su container e singoli grafici.
 - Classifica: se la sessione non fornisce la posizione giro, viene calcolata da tempi cumulati per ogni driver.
 - Strategia: i colori compound usano codifica Soft/Medium/Hard/Inter/Wet; degrado colorato per compound per lap.
