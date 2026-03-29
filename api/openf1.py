@@ -68,7 +68,42 @@ def fetch_drivers(session_key: int) -> pd.DataFrame:
     """Recupera i piloti per una sessione."""
     params = {"session_key": session_key}
     data = _fetch_json("drivers", params=params)
-    return _build_dataframe(data, ["driver_number", "full_name", "name_acronym", "team_name"])
+    df = _build_dataframe(
+        data,
+        [
+            "driver_number",
+            "full_name",
+            "name_acronym",
+            "team_name",
+            # Campi alternativi osservati in alcune versioni/payload OpenF1.
+            "broadcast_name",
+            "first_name",
+            "last_name",
+        ],
+    )
+
+    if df.empty:
+        return df
+
+    # Uniforma il tipo del numero pilota per i match con i dati laps.
+    df["driver_number"] = pd.to_numeric(df["driver_number"], errors="coerce")
+    df = df.dropna(subset=["driver_number"]).copy()
+    df["driver_number"] = df["driver_number"].astype(int)
+
+    # Fallback robusto per il nome completo quando `full_name` non è valorizzato.
+    missing_full_name = df["full_name"].isna() | (df["full_name"].astype(str).str.strip() == "")
+    combined = (
+        df["first_name"].fillna("").astype(str).str.strip()
+        + " "
+        + df["last_name"].fillna("").astype(str).str.strip()
+    ).str.strip()
+    df.loc[missing_full_name, "full_name"] = (
+        combined.where(combined != "", None)
+        .fillna(df["broadcast_name"])
+        .fillna(df["name_acronym"])
+    )
+
+    return df
 
 
 def fetch_stints(session_key: int) -> pd.DataFrame:
