@@ -1,7 +1,7 @@
 import pandas as pd
 from dash import Input, Output, State, callback
 
-from api.openf1 import fetch_laps, fetch_meetings, fetch_sessions
+from api.openf1 import fetch_meetings, fetch_sessions
 from utils.i18n import t, LANG_DEFAULT
 
 _DATE_COLUMNS = (
@@ -42,54 +42,6 @@ def _latest_option_value(options: list[dict]) -> int | None:
     return options[0]["value"] if options else None
 
 
-def _select_latest_session_with_data(df_sessions: pd.DataFrame, fallback_to_latest: bool = True) -> int | None:
-    """Seleziona la sessione più recente che abbia almeno un lap disponibile."""
-    if df_sessions.empty or "session_key" not in df_sessions.columns:
-        return None
-
-    ordered_sessions = _sort_latest_first(df_sessions)
-    fallback_value = None
-
-    for _, row in ordered_sessions.iterrows():
-        if pd.isna(row.get("session_key")):
-            continue
-        session_key = int(row["session_key"])
-        if fallback_value is None:
-            fallback_value = session_key
-        try:
-            df_laps = fetch_laps(session_key)
-        except Exception:
-            continue
-        if not df_laps.empty:
-            return session_key
-
-    return fallback_value if fallback_to_latest else None
-
-
-def _select_latest_meeting_with_data(df_meetings: pd.DataFrame) -> int | None:
-    """Seleziona il meeting più recente che abbia almeno una sessione con lap disponibili."""
-    if df_meetings.empty or "meeting_key" not in df_meetings.columns:
-        return None
-
-    ordered_meetings = _sort_latest_first(df_meetings)
-    fallback_value = None
-
-    for _, row in ordered_meetings.iterrows():
-        if pd.isna(row.get("meeting_key")):
-            continue
-        meeting_key = int(row["meeting_key"])
-        if fallback_value is None:
-            fallback_value = meeting_key
-        try:
-            df_sessions = fetch_sessions(meeting_key)
-        except Exception:
-            continue
-        if _select_latest_session_with_data(df_sessions, fallback_to_latest=False) is not None:
-            return meeting_key
-
-    return fallback_value
-
-
 @callback(
     output=[
         Output("meetings-store", "data"),
@@ -97,10 +49,9 @@ def _select_latest_meeting_with_data(df_meetings: pd.DataFrame) -> int | None:
         Output("meeting-dropdown", "value"),
         Output("meetings-status", "children"),
     ],
-    inputs=[Input("load-meetings-btn", "n_clicks"), Input("lang-store", "data")],
-    state=[State("year-input", "value")],
+    inputs=[Input("year-input", "value"), Input("lang-store", "data")],
 )
-def load_meetings(n_clicks, lang, year):
+def load_meetings(year, lang):
     lang = lang or LANG_DEFAULT
     try:
         df = fetch_meetings(year=int(year)) if year else fetch_meetings()
@@ -123,9 +74,7 @@ def load_meetings(n_clicks, lang, year):
         for _, row in ordered_meetings.iterrows()
         if pd.notna(row["meeting_key"])
     ]
-    value = _select_latest_meeting_with_data(ordered_meetings)
-    if value is None:
-        value = _latest_option_value(options)
+    value = _latest_option_value(options)
     status = t(lang, "meetings_loaded", count=len(options))
 
     return ordered_meetings.to_dict("records"), options, value, status
@@ -165,9 +114,7 @@ def load_sessions(meeting_key, lang, meetings_data):
         if pd.notna(row["session_key"])
     ]
 
-    value = _select_latest_session_with_data(ordered_sessions)
-    if value is None:
-        value = _latest_option_value(options)
+    value = _latest_option_value(options)
     status = t(lang, "sessions_loaded", count=len(options))
 
     return ordered_sessions.to_dict("records"), options, value, status

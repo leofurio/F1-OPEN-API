@@ -6,6 +6,10 @@ from utils.graph_order import DEFAULT_GRAPH_ORDER, GRAPH_TITLES
 def create_layout():
     """Crea il layout della dashboard."""
     current_year = datetime.utcnow().year
+    year_options = [
+        {"label": str(year), "value": year}
+        for year in range(current_year, 2017, -1)
+    ]
     return html.Div(
         style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
         children=[
@@ -40,18 +44,12 @@ def create_layout():
                         style={"flex": "1"},
                         children=[
                             html.Label(id="year-label", children="Anno"),
-                            dcc.Input(
+                            dcc.Dropdown(
                                 id="year-input",
-                                type="number",
-                                placeholder="Es. 2024",
-                                value=current_year,   # prevalorizzato con anno corrente
+                                options=year_options,
+                                clearable=False,
+                                value=current_year,
                                 style={"width": "100%"},
-                            ),
-                            html.Button(
-                                id="load-meetings-btn",
-                                children="Carica Circuiti",
-                                n_clicks=0,
-                                style={"marginTop": "8px"},
                             ),
                             html.Div(
                                 id="meetings-status",
