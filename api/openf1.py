@@ -2,7 +2,14 @@ import requests
 import pandas as pd
 from urllib.parse import urlencode
 from datetime import timedelta
-from config import BASE_URL, API_TIMEOUT, DEFAULT_LAP_DURATION_MINUTES
+import time
+from config import (
+    BASE_URL,
+    API_TIMEOUT,
+    DEFAULT_LAP_DURATION_MINUTES,
+    API_MAX_RETRIES,
+    API_RETRY_BACKOFF_SECONDS,
+)
 from utils.cache import get_cache_key, load_from_cache, save_to_cache
 
 
@@ -27,18 +34,46 @@ def _fetch_json(endpoint: str, params: dict | None = None, cache_suffix: str | N
         return cached_data
 
     url = f"{BASE_URL}/{endpoint.strip('/')}"
-    if cache_suffix:
-        query_string = urlencode(params)
-        separator = '&' if query_string else ''
-        full_url = f"{url}?{query_string}{separator}{cache_suffix}"
-        resp = requests.get(full_url, timeout=API_TIMEOUT)
-    else:
-        resp = requests.get(url, params=params, timeout=API_TIMEOUT)
-    resp.raise_for_status()
+    attempts = API_MAX_RETRIES + 1
+    last_error = None
 
-    data = resp.json()
-    save_to_cache(cache_key, data)
-    return data
+    for attempt in range(1, attempts + 1):
+        if cache_suffix:
+            query_string = urlencode(params)
+            separator = '&' if query_string else ''
+            full_url = f"{url}?{query_string}{separator}{cache_suffix}"
+            resp = requests.get(full_url, timeout=API_TIMEOUT)
+        else:
+            resp = requests.get(url, params=params, timeout=API_TIMEOUT)
+
+        if resp.status_code != 429:
+            resp.raise_for_status()
+            data = resp.json()
+            save_to_cache(cache_key, data)
+            return data
+
+        last_error = requests.HTTPError(
+            f"429 Too Many Requests for {resp.url}",
+            response=resp,
+        )
+        if attempt >= attempts:
+            break
+
+        retry_after = resp.headers.get("Retry-After")
+        if retry_after and retry_after.isdigit():
+            wait_seconds = float(retry_after)
+        else:
+            wait_seconds = API_RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
+        print(
+            f"⚠ Rate limit su {endpoint}: tentativo {attempt}/{attempts}. "
+            f"Attendo {wait_seconds:.1f}s..."
+        )
+        time.sleep(wait_seconds)
+
+    raise requests.HTTPError(
+        "OpenF1 ha risposto con 429 (Too Many Requests). "
+        "Riprova tra poco o riduci la frequenza delle richieste."
+    ) from last_error
 
 
 def fetch_meetings(year: int | None = None) -> pd.DataFrame:
