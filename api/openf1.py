@@ -7,7 +7,6 @@ import pandas as pd
 import requests
 
 from config import (
-    API_MAX_ITEMS,
     API_MAX_RETRIES,
     API_RETRY_BACKOFF_SECONDS,
     API_TIMEOUT,
@@ -40,7 +39,6 @@ def _fetch_json(endpoint: str, params: dict | None = None, cache_suffix: str | N
     """Recupera un endpoint OpenF1 usando cache file-based."""
     params = params or {}
     sanitized_params = {key: value for key, value in params.items() if value is not None}
-    sanitized_params["limit"] = min(int(sanitized_params.get("limit", API_MAX_ITEMS)), API_MAX_ITEMS)
     cache_key = get_cache_key(endpoint, **sanitized_params, cache_suffix=cache_suffix or "base")
     cached_data = load_from_cache(cache_key)
     if cached_data is not None:
