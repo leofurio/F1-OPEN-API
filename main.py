@@ -1,5 +1,6 @@
 from dash import Dash
 from components.layout import create_layout
+from utils.security import is_debug_enabled
 
 # Import callbacks per registrarli
 import callbacks.meetings  # noqa: E402,F401
@@ -21,4 +22,4 @@ app.title = "OpenF1 - Driver Comparison"
 app.layout = create_layout()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=is_debug_enabled())

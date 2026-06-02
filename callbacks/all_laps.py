@@ -4,6 +4,7 @@ from dash import Input, Output, State, callback, html
 
 from utils.telemetry import lap_duration_seconds_from_row, fmt_duration
 from utils.i18n import t, LANG_DEFAULT
+from utils.security import sanitize_error_message
 
 
 def _prepare_driver_laps(df_laps: pd.DataFrame, driver_number: int) -> pd.DataFrame:
@@ -300,5 +301,5 @@ def render_all_laps(session_key, driver1, driver2, lap1, lap2, lang, laps_data, 
         return times_fig, delta_fig, heatmap_fig, summary_text
 
     except Exception as e:
-        msg = t(lang, "error_generic", error=e)
+        msg = t(lang, "error_generic", error=sanitize_error_message(e))
         return _empty_fig(msg), _empty_fig(msg), _empty_fig(msg), msg

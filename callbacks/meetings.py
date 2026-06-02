@@ -3,6 +3,7 @@ from dash import Input, Output, State, callback
 
 from api.openf1 import fetch_meetings, fetch_sessions
 from utils.i18n import t, LANG_DEFAULT
+from utils.security import sanitize_error_message
 
 _DATE_COLUMNS = (
     "date_end",
@@ -56,7 +57,7 @@ def load_meetings(year, lang):
     try:
         df = fetch_meetings(year=int(year)) if year else fetch_meetings()
     except Exception as e:
-        return None, [], None, t(lang, "meetings_error", error=e)
+        return None, [], None, t(lang, "meetings_error", error=sanitize_error_message(e))
 
     if df.empty:
         return None, [], None, t(lang, "meetings_none")
@@ -98,7 +99,7 @@ def load_sessions(meeting_key, lang, meetings_data):
     try:
         df_sessions = fetch_sessions(int(meeting_key))
     except Exception as e:
-        return None, [], None, t(lang, "sessions_error", error=e)
+        return None, [], None, t(lang, "sessions_error", error=sanitize_error_message(e))
 
     if df_sessions.empty:
         return None, [], None, t(lang, "sessions_none")
