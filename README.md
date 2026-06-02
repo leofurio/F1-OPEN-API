@@ -117,7 +117,7 @@ utils/i18n.py           # Dizionario traduzioni IT/EN
 
 ---
 Autore: Leonardo Furio  
-Ultimo aggiornamento: 12 dicembre 2025  
+Ultimo aggiornamento: 2 giugno 2026  
 Versione: 1.6 (strategia gomme/pit, classifica giri, multilingua)
 
 ---
