@@ -219,6 +219,39 @@ def fetch_weather(session_key: int) -> pd.DataFrame:
     )
 
 
+def fetch_position(session_key: int) -> pd.DataFrame:
+    """Recupera la timeline delle posizioni per una sessione."""
+    params = {"session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY)}
+    data = _fetch_json("position", params=params)
+    return _build_dataframe(
+        data,
+        [
+            "date",
+            "driver_number",
+            "meeting_key",
+            "position",
+            "session_key",
+        ],
+    )
+
+
+def fetch_overtakes(session_key: int) -> pd.DataFrame:
+    """Recupera i sorpassi per una sessione."""
+    params = {"session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY)}
+    data = _fetch_json("overtakes", params=params)
+    return _build_dataframe(
+        data,
+        [
+            "date",
+            "meeting_key",
+            "overtaken_driver_number",
+            "overtaking_driver_number",
+            "position",
+            "session_key",
+        ],
+    )
+
+
 def _estimate_date_end(date_start) -> str | None:
     if not date_start:
         return None

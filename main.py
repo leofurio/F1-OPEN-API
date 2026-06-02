@@ -15,6 +15,7 @@ import callbacks.strategy  # noqa: E402,F401
 import callbacks.ranking  # noqa: E402,F401
 import callbacks.i18n  # noqa: E402,F401
 import callbacks.race_control_weather  # noqa: E402,F401
+import callbacks.overtakes_position  # noqa: E402,F401
 
 # Abilita suppress_callback_exceptions per permettere callback su componenti creati dinamicamente
 app = Dash(__name__, suppress_callback_exceptions=True)
