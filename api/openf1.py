@@ -177,6 +177,48 @@ def fetch_pitstops(session_key: int) -> pd.DataFrame:
     return _build_dataframe(data, ["driver_number", "lap_number", "pit_duration", "pit_duration_ms"])
 
 
+def fetch_race_control(session_key: int) -> pd.DataFrame:
+    """Recupera gli eventi race control per una sessione."""
+    params = {"session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY)}
+    data = _fetch_json("race_control", params=params)
+    return _build_dataframe(
+        data,
+        [
+            "category",
+            "date",
+            "driver_number",
+            "flag",
+            "lap_number",
+            "meeting_key",
+            "message",
+            "scope",
+            "sector",
+            "session_key",
+        ],
+    )
+
+
+def fetch_weather(session_key: int) -> pd.DataFrame:
+    """Recupera i dati meteo di una sessione."""
+    params = {"session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY)}
+    data = _fetch_json("weather", params=params)
+    return _build_dataframe(
+        data,
+        [
+            "air_temperature",
+            "date",
+            "humidity",
+            "meeting_key",
+            "pressure",
+            "rainfall",
+            "session_key",
+            "track_temperature",
+            "wind_direction",
+            "wind_speed",
+        ],
+    )
+
+
 def _estimate_date_end(date_start) -> str | None:
     if not date_start:
         return None

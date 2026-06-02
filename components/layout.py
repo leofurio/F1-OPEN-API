@@ -276,6 +276,38 @@ def create_layout():
                         ],
                     ),
                     dcc.Tab(
+                        id="tab-race-control-weather",
+                        label="Race Control + Meteo",
+                        value="race-control-weather",
+                        children=[
+                            html.Div(
+                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+                                children=[
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=html.Div(id="race-control-weather-summary"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="weather-temperatures-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=dcc.Graph(id="weather-conditions-graph"),
+                                    ),
+                                    dcc.Loading(
+                                        type="circle",
+                                        color="#555",
+                                        children=html.Div(id="race-control-table"),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    dcc.Tab(
                         id="tab-best-laps",
                         label="Miglior giro per pilota",
                         value="best-laps",
