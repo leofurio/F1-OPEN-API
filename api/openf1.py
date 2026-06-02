@@ -57,6 +57,14 @@ def _fetch_json(endpoint: str, params: dict | None = None, cache_suffix: str | N
         else:
             resp = requests.get(url, params=sanitized_params, timeout=API_TIMEOUT)
 
+        if resp.status_code == 404:
+            logger.info(
+                "OpenF1 returned 404 for endpoint=%s params=%s",
+                endpoint,
+                sanitized_params,
+            )
+            return []
+
         if resp.status_code != 429:
             resp.raise_for_status()
             data = resp.json()

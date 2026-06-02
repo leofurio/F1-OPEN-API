@@ -6,6 +6,7 @@ from utils.graph_order import DEFAULT_GRAPH_ORDER, GRAPH_TITLES
 def create_layout():
     """Crea il layout della dashboard."""
     current_year = datetime.utcnow().year
+    default_year = current_year - 1 if current_year > 2018 else current_year
     year_options = [
         {"label": str(year), "value": year}
         for year in range(current_year, 2017, -1)
@@ -48,7 +49,7 @@ def create_layout():
                                 id="year-input",
                                 options=year_options,
                                 clearable=False,
-                                value=current_year,
+                                value=default_year,
                                 style={"width": "100%"},
                             ),
                             html.Div(
