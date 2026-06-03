@@ -28,23 +28,6 @@ def _compound_color(compound: str | None) -> str:
     return mapping.get(c, "#888888")
 
 
-def _prepare_driver_laps(df_laps: pd.DataFrame, driver_number: int) -> pd.DataFrame:
-    """Filtra i giri per driver e calcola il tempo giro in secondi."""
-    if df_laps.empty:
-        return pd.DataFrame()
-    laps = df_laps[df_laps["driver_number"] == driver_number].copy()
-    if laps.empty:
-        return pd.DataFrame()
-    laps["lap_time_s"] = laps.apply(
-        lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
-        axis=1,
-    )
-    laps = laps.dropna(subset=["lap_time_s", "lap_number"])
-    laps["lap_number"] = laps["lap_number"].astype(int)
-    laps = laps.sort_values("lap_number")
-    return laps
-
-
 def _attach_compound(laps: pd.DataFrame, stints: pd.DataFrame, driver_number: int) -> pd.DataFrame:
     """Associa il compound ad ogni lap usando i dati stint."""
     if laps.empty or stints.empty:
