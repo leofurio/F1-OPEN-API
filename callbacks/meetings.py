@@ -3,6 +3,7 @@ from dash import Input, Output, State, callback
 
 from api.openf1 import fetch_meetings, fetch_sessions
 from utils.i18n import t, LANG_DEFAULT
+from utils.security import sanitize_error_message
 
 _DATE_COLUMNS = (
     "date_end",
@@ -56,10 +57,16 @@ def load_meetings(year, lang):
     try:
         df = fetch_meetings(year=int(year)) if year else fetch_meetings()
     except Exception as e:
-        return None, [], None, t(lang, "meetings_error", error=e)
+        return None, [], None, t(lang, "meetings_error", error=sanitize_error_message(e))
 
     if df.empty:
-        return None, [], None, t(lang, "meetings_none")
+        try:
+            fallback_df = fetch_meetings()
+        except Exception as e:
+            return None, [], None, t(lang, "meetings_error", error=sanitize_error_message(e))
+        if fallback_df.empty:
+            return None, [], None, t(lang, "meetings_none")
+        df = fallback_df
 
     ordered_meetings = _sort_latest_first(df)
 
@@ -75,7 +82,23 @@ def load_meetings(year, lang):
         if pd.notna(row["meeting_key"])
     ]
     value = _latest_option_value(options)
-    status = t(lang, "meetings_loaded", count=len(options))
+    if year and not ordered_meetings.empty:
+        selected_year_rows = ordered_meetings[ordered_meetings.get("year") == int(year)] if "year" in ordered_meetings.columns else pd.DataFrame()
+        if selected_year_rows.empty:
+            latest_row = ordered_meetings.iloc[0]
+            latest_year = latest_row.get("year")
+            latest_name = latest_row.get("meeting_name") or "Unknown"
+            status = t(
+                lang,
+                "meetings_loaded_fallback_latest",
+                count=len(options),
+                year=latest_year,
+                meeting=latest_name,
+            )
+        else:
+            status = t(lang, "meetings_loaded", count=len(options))
+    else:
+        status = t(lang, "meetings_loaded", count=len(options))
 
     return ordered_meetings.to_dict("records"), options, value, status
 
@@ -98,7 +121,7 @@ def load_sessions(meeting_key, lang, meetings_data):
     try:
         df_sessions = fetch_sessions(int(meeting_key))
     except Exception as e:
-        return None, [], None, t(lang, "sessions_error", error=e)
+        return None, [], None, t(lang, "sessions_error", error=sanitize_error_message(e))
 
     if df_sessions.empty:
         return None, [], None, t(lang, "sessions_none")

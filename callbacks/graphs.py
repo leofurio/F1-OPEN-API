@@ -11,6 +11,7 @@ from utils.telemetry import (
 )
 from config import COLOR1, COLOR2
 from utils.i18n import t, LANG_DEFAULT
+from utils.security import sanitize_error_message
 
 
 def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
@@ -110,7 +111,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         loc1 = fetch_location_for_lap(int(session_key), int(driver1), lap1_row)
         loc2 = fetch_location_for_lap(int(session_key), int(driver2), lap2_row)
     except Exception as e:
-        empty_fig.update_layout(title=t(lang, "error_generic", error=e))
+        empty_fig.update_layout(title=t(lang, "error_generic", error=sanitize_error_message(e)))
         return track_fig, delta_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     if df1.empty and df2.empty:
