@@ -206,6 +206,7 @@ def create_layout():
                                                     html.Div(
                                                         children=[
                                                             html.Div(
+                                                                id="graph-order-label",
                                                                 className="panel-title",
                                                                 style={"marginBottom": "10px"},
                                                                 children="Ordine grafici",
@@ -219,7 +220,6 @@ def create_layout():
                                                                 value=DEFAULT_GRAPH_ORDER[0],
                                                                 labelStyle={"display": "block", "margin": "4px 0", "fontSize": "0.8rem"},
                                                                 inputStyle={"marginRight": "8px"},
-                                                                id="graph-order-label",
                                                             ),
                                                         ],
                                                         style={"minWidth": "220px"},
