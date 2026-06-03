@@ -148,7 +148,7 @@ hr {
 
 /* ── Dropdown (Dash/React-Select) ───────────────────────────────── */
 .Select-control {
-  background-color: var(--surface-2) !important;
+  background-color: #111111 !important;
   border-color: var(--border) !important;
   border-radius: var(--radius-sm) !important;
   min-height: 36px !important;
@@ -167,7 +167,7 @@ hr {
 .is-open .Select-arrow { border-bottom-color: var(--text-muted) !important; }
 
 .Select-menu-outer {
-  background-color: var(--surface-2) !important;
+  background-color: #111111 !important;
   border-color: var(--border) !important;
   box-shadow: 0 8px 24px rgba(0,0,0,.6) !important;
   border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
@@ -175,13 +175,13 @@ hr {
 }
 
 .Select-option {
-  background-color: var(--surface-2) !important;
+  background-color: #111111 !important;
   color: var(--text) !important;
   font-size: 0.85rem !important;
   padding: 8px 12px !important;
 }
 
-.Select-option.is-focused { background-color: #2a2a2a !important; }
+.Select-option.is-focused { background-color: #1e1e1e !important; }
 .Select-option.is-selected {
   background-color: rgba(225,6,0,.12) !important;
   color: var(--accent) !important;
