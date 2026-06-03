@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Cache della app (TTL 6h)
+cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Log
+*.log

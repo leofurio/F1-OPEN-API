@@ -2,54 +2,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, State, callback, html
 
-from utils.telemetry import lap_duration_seconds_from_row, fmt_duration
+from utils.telemetry import fmt_duration
 from utils.i18n import t, LANG_DEFAULT
-from utils.security import sanitize_error_message
-
-
-def _prepare_driver_laps(df_laps: pd.DataFrame, driver_number: int) -> pd.DataFrame:
-    """Filtra e arricchisce i giri per un pilota con il tempo giro in secondi."""
-    if df_laps.empty:
-        return pd.DataFrame()
-
-    laps = df_laps[df_laps["driver_number"] == driver_number].copy()
-    if laps.empty:
-        return pd.DataFrame()
-
-    laps["lap_time_s"] = laps.apply(
-        lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
-        axis=1,
-    )
-    laps = laps.dropna(subset=["lap_time_s", "lap_number"])
-    laps["lap_number"] = laps["lap_number"].astype(int)
-    laps = laps.sort_values("lap_number")
-    return laps
-
-
-def _driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    """Restituisce un'etichetta leggibile per il pilota."""
-    if df_drivers.empty:
-        return f"Driver {num}"
-    row = df_drivers[df_drivers["driver_number"] == num]
-    if row.empty:
-        return f"Driver {num}"
-    row = row.iloc[0]
-    full_name = row.get("full_name") or ""
-    acronym = row.get("name_acronym") or ""
-    team = row.get("team_name") or ""
-    name = full_name or acronym or f"Driver {num}"
-    if team:
-        return f"{name} ({team})"
-    return name
-
-
-def _empty_fig(title: str) -> go.Figure:
-    fig = go.Figure()
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-    )
-    return fig
+from utils.helpers import driver_label as _driver_label, empty_fig as _empty_fig, prepare_driver_laps as _prepare_driver_laps
 
 
 @callback(
@@ -119,7 +74,7 @@ def render_all_laps(session_key, driver1, driver2, lap1, lap2, lang, laps_data, 
             title=t(lang, "times_title", d1=label1, d2=label2),
             xaxis_title="Lap",
             yaxis_title=t(lang, "times_y"),
-            template="plotly_white",
+            template="f1dark",
         )
 
         # Grafico delta (d2 - d1)
@@ -164,7 +119,7 @@ def render_all_laps(session_key, driver1, driver2, lap1, lap2, lang, laps_data, 
             title=t(lang, "delta_title", d2=label2, d1=label1),
             xaxis_title="Lap",
             yaxis_title=t(lang, "delta_y"),
-            template="plotly_white",
+            template="f1dark",
         )
 
         # Heatmap lap times: mostra tutti i giri (asse Y) per entrambi i piloti
@@ -268,7 +223,7 @@ def render_all_laps(session_key, driver1, driver2, lap1, lap2, lang, laps_data, 
                     title=t(lang, "heatmap_title"),
                     xaxis_title=t(lang, "heatmap_x"),
                     yaxis_title=t(lang, "heatmap_y"),
-                    template="plotly_white",
+                    template="f1dark",
                     height=1040,
                     autosize=True,
                     xaxis=dict(side="top"),

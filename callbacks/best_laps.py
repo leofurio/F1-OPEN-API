@@ -3,23 +3,7 @@ from dash import Input, Output, callback, html
 
 from utils.telemetry import lap_duration_seconds_from_row, fmt_duration, parse_time_str
 from utils.i18n import t, LANG_DEFAULT
-
-
-def _driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    """Restituisce una label leggibile per il pilota."""
-    if df_drivers.empty:
-        return f"Driver #{int(num)}"
-    row = df_drivers[df_drivers["driver_number"] == num]
-    if row.empty:
-        return f"Driver #{int(num)}"
-    row = row.iloc[0]
-    full_name = row.get("full_name") or row.get("name_acronym") or ""
-    team = row.get("team_name") or ""
-    if full_name and team:
-        return f"#{int(num)} - {full_name} ({team})"
-    if full_name:
-        return f"#{int(num)} - {full_name}"
-    return f"Driver #{int(num)}"
+from utils.helpers import driver_label as _driver_label
 
 
 def _build_table(rows: list[str | html.Tr], lang: str):

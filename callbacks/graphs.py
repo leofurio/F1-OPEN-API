@@ -11,24 +11,8 @@ from utils.telemetry import (
 )
 from config import COLOR1, COLOR2
 from utils.i18n import t, LANG_DEFAULT
-from utils.security import sanitize_error_message
+from utils.helpers import driver_label
 
-
-def driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    """Format a readable label for a driver."""
-    if df_drivers.empty:
-        return f"Driver #{int(num)}"
-    row = df_drivers[df_drivers["driver_number"] == num]
-    if row.empty:
-        return f"Driver #{int(num)}"
-    row = row.iloc[0]
-    full_name = row.get("full_name") or row.get("name_acronym") or ""
-    team = row.get("team_name") or ""
-    if full_name and team:
-        return f"#{int(num)} - {full_name} ({team})"
-    if full_name:
-        return f"#{int(num)} - {full_name}"
-    return f"Driver #{int(num)}"
 
 
 @callback(
@@ -66,7 +50,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "graphs_select"),
         xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="",
-        template="plotly_white",
+        template="f1dark",
     )
 
     track_fig = go.Figure()
@@ -74,7 +58,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "track_unavailable"),
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
-        template="plotly_white",
+        template="f1dark",
     )
 
     delta_fig = go.Figure()
@@ -82,7 +66,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "delta_unavailable"),
         xaxis_title=t(lang, "progress_x"),
         yaxis_title=t(lang, "delta_y_time"),
-        template="plotly_white",
+        template="f1dark",
     )
 
     if not laps_data or not session_key or not driver1 or not driver2 or not lap1_number or not lap2_number:
@@ -143,7 +127,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=f"{t(lang, 'track_title')} · {name1_short} vs {name2_short}",
         xaxis_title="X (m)",
         yaxis_title="Y (m)",
-        template="plotly_white",
+        template="f1dark",
         yaxis_scaleanchor="x",
     )
 
@@ -157,7 +141,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
             title=f"{t(lang, 'delta_graph_title')} · {name2_short} vs {name1_short}",
             xaxis_title=t(lang, "progress_x"),
             yaxis_title=f"Delta (s, >0 = {name2_short} più lento)",
-            template="plotly_white",
+            template="f1dark",
             shapes=[dict(type="line", xref="paper", x0=0, x1=1, y0=0, y1=0, line=dict(dash="dash", width=1))],
         )
 
@@ -173,7 +157,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "speed_title", suffix=title_suffix) + selected_time_str,
         xaxis_title=t(lang, "telemetry_x"),
         yaxis_title=t(lang, "speed_y"),
-        template="plotly_white",
+        template="f1dark",
     )
 
     # -------- SPEED HEATMAP --------
@@ -221,7 +205,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "heat_speed_title", suffix=title_suffix) + selected_time_str,
         xaxis_title=t(lang, "progress_x"),
         yaxis_title="Pilota",
-        template="plotly_white",
+        template="f1dark",
         shapes=heatmap_shapes,
     )
 
@@ -237,7 +221,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "throttle_title", suffix=title_suffix) + selected_time_str,
         xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Throttle (%)",
-        template="plotly_white",
+        template="f1dark",
     )
 
     # -------- BRAKE --------
@@ -252,7 +236,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "brake_title", suffix=title_suffix) + selected_time_str,
         xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Brake",
-        template="plotly_white",
+        template="f1dark",
     )
 
     # -------- GEAR --------
@@ -267,7 +251,7 @@ def update_graphs(session_key, driver1, lap1_number, driver2, lap2_number, selec
         title=t(lang, "gear_title", suffix=title_suffix) + selected_time_str,
         xaxis_title=t(lang, "telemetry_x"),
         yaxis_title="Marcia",
-        template="plotly_white",
+        template="f1dark",
     )
 
     # Linee verticali a fine giro per i due piloti
