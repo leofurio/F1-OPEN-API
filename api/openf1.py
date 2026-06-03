@@ -1,3 +1,4 @@
+import logging
 import requests
 import pandas as pd
 from urllib.parse import urlencode
@@ -11,6 +12,8 @@ from config import (
     API_RETRY_BACKOFF_SECONDS,
 )
 from utils.cache import get_cache_key, load_from_cache, save_to_cache
+
+logger = logging.getLogger(__name__)
 
 
 def _build_dataframe(data, required_columns: list[str]) -> pd.DataFrame:
@@ -173,20 +176,19 @@ def fetch_car_data_for_lap(session_key: int,
         if pd.isna(start_dt):
             return pd.DataFrame()
         date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
-        print(f"⚠ date_end era None, usando stima: {date_end}")
+        logger.warning("date_end era None per driver %d, usando stima: %s", driver_number, date_end)
 
     params = {
         "session_key": session_key,
         "driver_number": driver_number,
     }
     date_filter = f"date>{date_start}&date<{date_end}"
-    full_url = f"{BASE_URL}/car_data?{urlencode(params)}&{date_filter}"
-    print(f"🔗 Query URL (car_data): {full_url}")
+    logger.debug("Query URL (car_data): %s/car_data?%s&%s", BASE_URL, urlencode(params), date_filter)
 
     data = _fetch_json("car_data", params=params, cache_suffix=date_filter)
 
     if not data:
-        print(f"⚠ Nessun car_data trovato per driver {driver_number}")
+        logger.warning("Nessun car_data trovato per driver %d", driver_number)
         return pd.DataFrame()
 
     df = pd.DataFrame(data)
@@ -223,19 +225,18 @@ def fetch_location_for_lap(session_key: int,
         if pd.isna(start_dt):
             return pd.DataFrame()
         date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
-        print(f"⚠ (location) date_end era None, usando stima: {date_end}")
+        logger.warning("(location) date_end era None per driver %d, usando stima: %s", driver_number, date_end)
 
     params = {
         "session_key": session_key,
         "driver_number": driver_number,
     }
     date_filter = f"date>{date_start}&date<{date_end}"
-    full_url = f"{BASE_URL}/location?{urlencode(params)}&{date_filter}"
-    print(f"🔗 Query URL (location): {full_url}")
+    logger.debug("Query URL (location): %s/location?%s&%s", BASE_URL, urlencode(params), date_filter)
 
     data = _fetch_json("location", params=params, cache_suffix=date_filter)
     if not data:
-        print(f"⚠ Nessun location trovato per driver {driver_number}")
+        logger.warning("Nessun location trovato per driver %d", driver_number)
         return pd.DataFrame()
 
     df = pd.DataFrame(data)

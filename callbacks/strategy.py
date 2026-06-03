@@ -1,33 +1,16 @@
+import logging
+
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, State, callback, html
 
 from api.openf1 import fetch_stints, fetch_pitstops
 from utils.i18n import t, LANG_DEFAULT
-from utils.telemetry import lap_duration_seconds_from_row, fmt_duration
+from utils.telemetry import fmt_duration
+from utils.helpers import driver_label as _driver_label, empty_fig as _empty_fig, prepare_driver_laps as _prepare_driver_laps
 from config import COLOR1, COLOR2
 
-
-def _empty_fig(title: str) -> go.Figure:
-    fig = go.Figure()
-    fig.update_layout(title=title, template="plotly_white")
-    return fig
-
-
-def _driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    if df_drivers.empty:
-        return f"Driver #{int(num)}"
-    row = df_drivers[df_drivers["driver_number"] == num]
-    if row.empty:
-        return f"Driver #{int(num)}"
-    row = row.iloc[0]
-    full_name = row.get("full_name") or row.get("name_acronym") or ""
-    team = row.get("team_name") or ""
-    if full_name and team:
-        return f"#{int(num)} - {full_name} ({team})"
-    if full_name:
-        return f"#{int(num)} - {full_name}"
-    return f"Driver #{int(num)}"
+logger = logging.getLogger(__name__)
 
 
 def _compound_color(compound: str | None) -> str:
@@ -74,7 +57,7 @@ def _attach_compound(laps: pd.DataFrame, stints: pd.DataFrame, driver_number: in
 
     def find_compound(lap_num: int):
         for _, row in driver_stints.iterrows():
-            start = row.get("lap_start") or row.get("stint_start") or row.get("lap_start")
+            start = row.get("lap_start") or row.get("stint_start")
             end = row.get("lap_end") or row.get("stint_end") or start
             try:
                 start_int = int(start) if pd.notna(start) else None
@@ -139,14 +122,14 @@ def render_strategy(session_key, driver1, driver2, lang, laps_data, drivers_data
         stints_fig.update_layout(
             title=t(lang, "stints_none"),
             xaxis_title="Lap",
-            template="plotly_white",
+            template="f1dark",
         )
     else:
         for drv, color in [(driver1, COLOR1), (driver2, COLOR2)]:
             drv_stints = stints_filtered[stints_filtered["driver_number"] == drv]
             drv_label = label1 if drv == driver1 else label2
             for idx, row in drv_stints.sort_values("stint_number", na_position="last").iterrows():
-                start = row.get("lap_start") or row.get("stint_start") or row.get("lap_start")
+                start = row.get("lap_start") or row.get("stint_start")
                 end = row.get("lap_end") or row.get("stint_end") or start
                 try:
                     start_int = int(start) if pd.notna(start) else None
@@ -185,14 +168,14 @@ def render_strategy(session_key, driver1, driver2, lang, laps_data, drivers_data
             title=t(lang, "stints_title"),
             xaxis_title="Lap",
             barmode="overlay",
-            template="plotly_white",
+            template="f1dark",
         )
 
     # --- Pit stops ---
     pit_fig = go.Figure()
     pit_filtered = pitstops[pitstops["driver_number"].isin([driver1, driver2])] if not pitstops.empty else pd.DataFrame()
     if pit_filtered.empty:
-        pit_fig.update_layout(title=t(lang, "pit_none"), template="plotly_white")
+        pit_fig.update_layout(title=t(lang, "pit_none"), template="f1dark")
     else:
         for drv, color in [(driver1, COLOR1), (driver2, COLOR2)]:
             drv_pits = pit_filtered[pit_filtered["driver_number"] == drv]
@@ -220,7 +203,7 @@ def render_strategy(session_key, driver1, driver2, lang, laps_data, drivers_data
             title=t(lang, "pit_title"),
             xaxis_title="Lap",
             yaxis_title=t(lang, "pit_y"),
-            template="plotly_white",
+            template="f1dark",
             shapes=[
                 dict(
                     type="line",
@@ -242,7 +225,7 @@ def render_strategy(session_key, driver1, driver2, lang, laps_data, drivers_data
     d2 = _attach_compound(d2, stints, int(driver2))
 
     if d1.empty and d2.empty:
-        deg_fig.update_layout(title=t(lang, "deg_none"), template="plotly_white")
+        deg_fig.update_layout(title=t(lang, "deg_none"), template="f1dark")
     else:
         for df, drv, color in [(d1, driver1, COLOR1), (d2, driver2, COLOR2)]:
             if df.empty:
@@ -267,7 +250,7 @@ def render_strategy(session_key, driver1, driver2, lang, laps_data, drivers_data
             title=t(lang, "deg_title"),
             xaxis_title="Lap",
             yaxis_title=t(lang, "times_y"),
-            template="plotly_white",
+            template="f1dark",
         )
 
     # --- Summary ---
