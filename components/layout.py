@@ -339,6 +339,55 @@ def create_layout():
                                 ],
                             ),
 
+                            # ── Tab: Race Control + Meteo ────────
+                            dcc.Tab(
+                                id="tab-race-control-weather",
+                                label="Race Control + Meteo",
+                                value="race-control-weather",
+                                children=[
+                                    html.Div(
+                                        style={"paddingTop": "16px", "display": "flex", "flexDirection": "column", "gap": "10px"},
+                                        children=[
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="race-control-weather-summary",
+                                                                          className="panel", style={"minHeight": "40px"})),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="weather-temperatures-graph", config={"displaylogo": False}))),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="weather-conditions-graph", config={"displaylogo": False}))),
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="race-control-table",
+                                                                          className="panel")),
+                                        ],
+                                    ),
+                                ],
+                            ),
+
+                            # ── Tab: Overtakes + Position ────────
+                            dcc.Tab(
+                                id="tab-overtakes-position",
+                                label="Overtakes + Position",
+                                value="overtakes-position",
+                                children=[
+                                    html.Div(
+                                        style={"paddingTop": "16px", "display": "flex", "flexDirection": "column", "gap": "10px"},
+                                        children=[
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="overtakes-position-summary",
+                                                                          className="panel", style={"minHeight": "40px"})),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="position-timeline-graph", config={"displaylogo": False}))),
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="overtakes-table",
+                                                                          className="panel")),
+                                        ],
+                                    ),
+                                ],
+                            ),
+
                             # ── Tab: Miglior giro per pilota ─────
                             dcc.Tab(
                                 id="tab-best-laps",
