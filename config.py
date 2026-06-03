@@ -2,7 +2,7 @@ BASE_URL = "https://api.openf1.org/v1"
 
 # Colori fissi per i due piloti (coerenti su tutti i grafici)
 COLOR1 = "#e10600"   # F1 red   — Pilota 1
-COLOR2 = "#0090d0"   # sky blue — Pilota 2
+COLOR2 = "#00b4e6"   # sky blue — Pilota 2
 
 # Timeout API
 API_TIMEOUT = 30

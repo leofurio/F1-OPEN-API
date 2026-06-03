@@ -12,7 +12,7 @@ def create_layout():
     year_options = [{"label": str(y), "value": y} for y in range(current_year, 2017, -1)]
 
     return html.Div(
-        style={"minHeight": "100vh", "backgroundColor": "#0d0d0d"},
+        style={"minHeight": "100vh"},
         children=[
 
             # ── Header ───────────────────────────────────────────
