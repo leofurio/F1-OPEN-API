@@ -200,55 +200,98 @@ hr {
   display: block !important;
 }
 
-/* ── Dropdown (Dash/React-Select) ───────────────────────────────── */
+/* ── Dropdown (Dash 2.x — variabili Dash + classi reali) ────────── */
+
+/* Sovrascrive le variabili CSS di Dash nel tema chiaro di default */
+:root {
+  --Dash-Fill-Inverse-Strong:   var(--input-bg);      /* sfondo controllo */
+  --Dash-Fill-Interactive-Weak: var(--surface-3);     /* sfondo opzione hover */
+  --Dash-Fill-Interactive-Strong: var(--accent);      /* outline focus */
+  --Dash-Stroke-Strong:         var(--border);        /* bordo */
+  --Dash-Text-Strong:           var(--text);          /* testo selezionato */
+  --Dash-Text-Weak:             var(--text-muted);    /* placeholder / testo debole */
+  --Dash-Text-Disabled:         var(--text-dim);      /* testo disabilitato */
+  --Dash-Fill-Disabled:         var(--border);        /* separatori */
+  --Dash-Shading-Strong:        rgba(0,0,0,.65);
+  --Dash-Shading-Weak:          rgba(0,0,0,.4);
+}
+
+/* Wrapper esterno del dropdown */
+.dropdown-wrapper,
+.dash-dropdown {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.dropdown-wrapper:hover,
+.dash-dropdown:hover { border-color: var(--border-hover) !important; }
+
+/* Valore selezionato e placeholder */
+.dropdown-value,
+.dropdown-placeholder {
+  color: var(--text) !important;
+  font-weight: 500;
+  background: transparent !important;
+}
+
+.dropdown-placeholder { color: var(--text-dim) !important; font-weight: 400 !important; }
+
+/* Contenuto del menu (tendina) */
+.dropdown-content {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-2) !important;
+  z-index: 9999 !important;
+  overflow: hidden !important;
+}
+
+/* Ogni opzione nella lista */
+.dropdown-option {
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  font-size: 0.85rem !important;
+  transition: background .12s !important;
+}
+
+.dropdown-option:hover,
+.dropdown-option:focus { background: var(--surface-3) !important; }
+
+.dropdown-option[aria-selected="true"] {
+  background: rgba(225,6,0,.14) !important;
+  color: #ff5b52 !important;
+  font-weight: 600 !important;
+}
+
+/* Campo di ricerca interno */
+.dropdown-search input {
+  color: var(--text) !important;
+  background: transparent !important;
+}
+
+/* Focus outline accento rosso */
+.dropdown-wrapper:focus-within,
+.dash-dropdown:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(225,6,0,.14) !important;
+}
+
+/* ── Legacy React-Select (fallback classi vecchie) ──────────────── */
 .Select-control {
   background-color: var(--input-bg) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-sm) !important;
   min-height: 38px !important;
-  transition: border-color .15s, box-shadow .15s !important;
 }
-
-.Select-control:hover { border-color: var(--border-hover) !important; }
-.is-focused:not(.is-open) > .Select-control,
-.is-focused .Select-control {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(225,6,0,.14) !important;
-}
-
-.Select-value-label,
-.Select-single-value { color: var(--text) !important; font-weight: 500 !important; }
-
+.is-focused .Select-control { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(225,6,0,.14) !important; }
+.Select-value-label, .Select-single-value { color: var(--text) !important; }
 .Select-placeholder { color: var(--text-dim) !important; }
-
-.Select-arrow { border-top-color: var(--text-muted) !important; }
-.is-open .Select-arrow { border-bottom-color: var(--accent) !important; }
-
-.Select-menu-outer {
-  background-color: var(--input-bg) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: var(--shadow-2) !important;
-  border-radius: var(--radius-sm) !important;
-  margin-top: 4px !important;
-  overflow: hidden !important;
-  z-index: 9999 !important;
-}
-
-.Select-option {
-  background-color: var(--input-bg) !important;
-  color: var(--text) !important;
-  font-size: 0.85rem !important;
-  padding: 9px 13px !important;
-  transition: background .12s !important;
-}
-
+.Select-menu-outer { background-color: var(--input-bg) !important; border-color: var(--border) !important; z-index: 9999 !important; }
+.Select-option { background-color: var(--input-bg) !important; color: var(--text) !important; }
 .Select-option.is-focused { background-color: var(--surface-3) !important; }
-.Select-option.is-selected {
-  background-color: rgba(225,6,0,.14) !important;
-  color: #ff5b52 !important;
-  font-weight: 600 !important;
-}
-
+.Select-option.is-selected { background-color: rgba(225,6,0,.14) !important; color: #ff5b52 !important; font-weight: 600 !important; }
 .Select-input input { color: var(--text) !important; background: transparent !important; }
 
 /* Multi-select */
