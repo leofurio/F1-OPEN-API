@@ -7,6 +7,7 @@ from api.openf1 import fetch_laps, fetch_drivers
 from utils.telemetry import fmt_duration, lap_duration_seconds_from_row
 from utils.helpers import driver_label as _driver_label
 from utils.i18n import t, LANG_DEFAULT
+from utils.security import sanitize_error_message
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def load_laps_and_drivers(session_key, lang):
     try:
         df_laps = fetch_laps(int(session_key))
     except Exception as e:
-        return None, [], None, [], None, t(lang, "error_generic", error=e), None
+        return None, [], None, [], None, t(lang, "error_generic", error=sanitize_error_message(e)), None
 
     if df_laps.empty:
         return None, [], None, [], None, t(lang, "status_no_laps"), None

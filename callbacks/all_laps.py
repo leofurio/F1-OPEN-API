@@ -256,5 +256,5 @@ def render_all_laps(session_key, driver1, driver2, lap1, lap2, lang, laps_data, 
         return times_fig, delta_fig, heatmap_fig, summary_text
 
     except Exception as e:
-        msg = t(lang, "error_generic", error=e)
+        msg = t(lang, "error_generic", error=sanitize_error_message(e))
         return _empty_fig(msg), _empty_fig(msg), _empty_fig(msg), msg
