@@ -3,111 +3,64 @@ from datetime import datetime
 from utils.graph_order import DEFAULT_GRAPH_ORDER, GRAPH_TITLES
 
 
+def _label(text_id: str, text: str, **extra) -> html.Label:
+    return html.Label(text, className="form-label", id=text_id, **extra)
+
+
 def create_layout():
-    """Crea il layout della dashboard."""
     current_year = datetime.utcnow().year
-    year_options = [
-        {"label": str(year), "value": year}
-        for year in range(current_year, 2017, -1)
-    ]
+    year_options = [{"label": str(y), "value": y} for y in range(current_year, 2017, -1)]
+
     return html.Div(
-        style={"fontFamily": "Arial, sans-serif", "margin": "20px"},
+        style={"minHeight": "100vh", "backgroundColor": "#0d0d0d"},
         children=[
-            html.Div(
-                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "gap": "12px"},
+
+            # ── Header ───────────────────────────────────────────
+            html.Header(
+                className="app-header",
                 children=[
-                    html.H1(id="page-title", children="OpenF1 - Driver Comparison Dashboard"),
+                    html.Div(
+                        className="app-header-brand",
+                        children=[
+                            html.Div(
+                                className="brand-icon",
+                                children=[
+                                    html.Div(className="brand-stripe"),
+                                    html.Div(className="brand-stripe"),
+                                    html.Div(className="brand-stripe"),
+                                ],
+                            ),
+                            html.Div(
+                                className="brand-text",
+                                children=[
+                                    html.H1(
+                                        id="page-title",
+                                        className="app-title",
+                                        children=[html.Span("OpenF1"), " · Driver Comparison"],
+                                    ),
+                                    html.P(
+                                        id="intro-text",
+                                        className="app-subtitle",
+                                        children="Telemetria & Analisi · Formula 1 Open Data",
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
                     dcc.Dropdown(
                         id="language-dropdown",
                         options=[
-                            {"label": "Italiano", "value": "it"},
-                            {"label": "English", "value": "en"},
+                            {"label": "🇮🇹  Italiano", "value": "it"},
+                            {"label": "🇬🇧  English",  "value": "en"},
                         ],
                         value="it",
                         clearable=False,
-                        style={"width": "180px"},
-                    ),
-                ],
-            ),
-            html.P(
-                id="intro-text",
-                children="Flusso: Anno > Circuito > Sessione > Drivers > Lap > Telemetria + Location + Delta time.",
-            ),
-
-            html.Hr(),
-
-            # RIGA 1: anno + circuito
-            html.Div(
-                style={"display": "flex", "gap": "20px", "marginBottom": "20px"},
-                children=[
-                    html.Div(
-                        style={"flex": "1"},
-                        children=[
-                            html.Label(id="year-label", children="Anno"),
-                            dcc.Dropdown(
-                                id="year-input",
-                                options=year_options,
-                                clearable=False,
-                                value=current_year,
-                                style={"width": "100%"},
-                            ),
-                            html.Div(
-                                id="meetings-status",
-                                style={"marginTop": "10px", "color": "#555"},
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        style={"flex": "2"},
-                        children=[
-                            html.Label(id="meeting-label", children="Circuito (Gran Premio)"),
-                            dcc.Dropdown(id="meeting-dropdown", options=[], value=None),
-                        ],
+                        style={"width": "160px"},
                     ),
                 ],
             ),
 
-            # RIGA 2: sessione + piloti + giri
-            html.Div(
-                style={"display": "flex", "gap": "20px", "marginBottom": "20px"},
-                children=[
-                    html.Div(
-                        style={"flex": "1"},
-                        children=[
-                            html.Label(id="session-label", children="Sessione"),
-                            dcc.Dropdown(id="session-dropdown", options=[], value=None),
-                            html.Div(
-                                id="sessions-status",
-                                style={"marginTop": "10px", "color": "#555"},
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        style={"flex": "2"},
-                        children=[
-                            html.Label(id="driver1-label", children="Pilota 1"),
-                            dcc.Dropdown(id="driver1-dropdown", options=[], value=None),
-                            html.Label(id="lap1-label", children="Giro Pilota 1"),
-                            dcc.Dropdown(id="lap1-dropdown", options=[], value=None),
-                            html.Br(),
-                            html.Label(id="driver2-label", children="Pilota 2"),
-                            dcc.Dropdown(id="driver2-dropdown", options=[], value=None),
-                            html.Label(id="lap2-label", children="Giro Pilota 2"),
-                            dcc.Dropdown(id="lap2-dropdown", options=[], value=None),
-                            html.Div(
-                                id="laps-status",
-                                style={"marginTop": "10px", "color": "#555"},
-                            ),
-                            html.Div(
-                                id="lap-compare-status",
-                                style={"marginTop": "6px", "color": "#222", "fontWeight": "bold"},
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-
-            # Store per cache e stato condiviso
+            # ── Stores (hidden) ──────────────────────────────────
             dcc.Store(id="meetings-store"),
             dcc.Store(id="sessions-store"),
             dcc.Store(id="laps-store"),
@@ -116,236 +69,289 @@ def create_layout():
             dcc.Store(id="graph-order-store", data=DEFAULT_GRAPH_ORDER),
             dcc.Store(id="lang-store", data="it"),
 
-            html.Hr(),
-
-            dcc.Tabs(
-                id="page-tabs",
-                value="telemetry",
+            # ── Body ─────────────────────────────────────────────
+            html.Div(
+                className="app-body",
                 children=[
-                    dcc.Tab(
-                        id="tab-telemetry",
-                        label="Telemetria giro",
-                        value="telemetry",
+
+                    # ── Selection panel ──────────────────────────
+                    html.Div(
+                        className="panel",
                         children=[
+                            html.Div(className="panel-title", children="Selezione Sessione"),
+
+                            # Row 1: Anno · Circuito · Sessione
                             html.Div(
-                                style={"display": "flex", "gap": "12px", "alignItems": "center", "marginBottom": "15px"},
+                                style={"display": "flex", "gap": "16px", "marginBottom": "14px"},
                                 children=[
                                     html.Div(
+                                        style={"flex": "0 0 140px"},
                                         children=[
-                                            html.Label(id="graph-order-label", children="Ordine grafici:"),
-                                            dcc.RadioItems(
-                                                id="graph-order-radio",
-                                                options=[{"label": GRAPH_TITLES[g], "value": g} for g in DEFAULT_GRAPH_ORDER],
-                                                value=DEFAULT_GRAPH_ORDER[0],
-                                                labelStyle={"display": "block", "margin": "4px 0"},
-                                                inputStyle={"marginRight": "8px"},
+                                            _label("year-label", "Anno"),
+                                            dcc.Dropdown(
+                                                id="year-input",
+                                                options=year_options,
+                                                value=current_year,
+                                                clearable=False,
+                                            ),
+                                            html.Div(id="meetings-status", className="status-msg"),
+                                        ],
+                                    ),
+                                    html.Div(
+                                        style={"flex": "1"},
+                                        children=[
+                                            _label("meeting-label", "Circuito (Gran Premio)"),
+                                            dcc.Dropdown(id="meeting-dropdown", options=[], value=None),
+                                        ],
+                                    ),
+                                    html.Div(
+                                        style={"flex": "0 0 220px"},
+                                        children=[
+                                            _label("session-label", "Sessione"),
+                                            dcc.Dropdown(id="session-dropdown", options=[], value=None),
+                                            html.Div(id="sessions-status", className="status-msg"),
+                                        ],
+                                    ),
+                                ],
+                            ),
+
+                            html.Hr(),
+
+                            # Row 2: Pilota 1 · Pilota 2 · Status
+                            html.Div(
+                                style={"display": "flex", "gap": "14px", "alignItems": "flex-start"},
+                                children=[
+                                    # Pilota 1
+                                    html.Div(
+                                        className="driver-panel driver-panel-1",
+                                        children=[
+                                            html.Div(
+                                                className="driver-panel-header",
+                                                children=[
+                                                    html.Span("P1", className="driver-badge driver-badge-1"),
+                                                    _label("driver1-label", "Pilota 1", style={"margin": "0"}),
+                                                ],
+                                            ),
+                                            dcc.Dropdown(id="driver1-dropdown", options=[], value=None),
+                                            html.Div(
+                                                style={"marginTop": "10px"},
+                                                children=[
+                                                    _label("lap1-label", "Giro"),
+                                                    dcc.Dropdown(id="lap1-dropdown", options=[], value=None),
+                                                ],
                                             ),
                                         ],
-                                        style={"minWidth": "220px"},
                                     ),
+                                    # Pilota 2
                                     html.Div(
-                                        style={"display": "flex", "flexDirection": "column", "gap": "8px"},
+                                        className="driver-panel driver-panel-2",
                                         children=[
-                                            html.Button(id="move-up-btn", children="Move Up", n_clicks=0),
-                                            html.Button(id="move-down-btn", children="Move Down", n_clicks=0),
-                                            html.Button(id="reset-graph-order-btn", children="Reset ordine", n_clicks=0),
+                                            html.Div(
+                                                className="driver-panel-header",
+                                                children=[
+                                                    html.Span("P2", className="driver-badge driver-badge-2"),
+                                                    _label("driver2-label", "Pilota 2", style={"margin": "0"}),
+                                                ],
+                                            ),
+                                            dcc.Dropdown(id="driver2-dropdown", options=[], value=None),
+                                            html.Div(
+                                                style={"marginTop": "10px"},
+                                                children=[
+                                                    _label("lap2-label", "Giro"),
+                                                    dcc.Dropdown(id="lap2-dropdown", options=[], value=None),
+                                                ],
+                                            ),
                                         ],
                                     ),
-                                    html.Div(id="graph-order-msg", style={"color": "#555", "marginLeft": "12px"}),
+                                    # Status sidebar
+                                    html.Div(
+                                        style={
+                                            "flex": "0 0 280px",
+                                            "display": "flex",
+                                            "flexDirection": "column",
+                                            "gap": "8px",
+                                            "justifyContent": "center",
+                                            "paddingTop": "6px",
+                                        },
+                                        children=[
+                                            html.Div(id="laps-status", className="status-msg"),
+                                            html.Div(id="lap-compare-status"),
+                                        ],
+                                    ),
                                 ],
                             ),
+                        ],
+                    ),
 
-                            html.Div(
-                                style={"marginBottom": "12px"},
+                    # ── Tabs ─────────────────────────────────────
+                    dcc.Tabs(
+                        id="page-tabs",
+                        value="telemetry",
+                        children=[
+
+                            # ── Tab: Telemetria giro ─────────────
+                            dcc.Tab(
+                                id="tab-telemetry",
+                                label="Telemetria giro",
+                                value="telemetry",
                                 children=[
-                                    html.Button(id="print-btn", children="Stampa PDF", n_clicks=0),
-                                ],
-                            ),
-                            html.Div(id="print-trigger", style={"display": "none"}),
-
-                            # Contenitore grafici con spinner durante l'update
-                            dcc.Loading(
-                                id="graphs-loading",
-                                type="circle",
-                                color="#555",
-                                children=html.Div(
-                                    id="graphs-container",
-                                    style={"display": "flex", "flexDirection": "column", "gap": "20px"},
-                                    # Seed iniziale per evitare errori di validazione prima del callback
-                                    children=[
-                                        html.Div(
-                                            [
-                                                html.H3(GRAPH_TITLES.get(graph_id, graph_id), style={"marginBottom": "6px"}),
-                                                dcc.Loading(
-                                                    type="circle",
-                                                    color="#555",
-                                                    children=dcc.Graph(id=graph_id),
+                                    html.Div(
+                                        style={"paddingTop": "16px"},
+                                        children=[
+                                            # toolbar
+                                            html.Div(
+                                                className="panel",
+                                                style={"display": "flex", "gap": "20px", "alignItems": "flex-start"},
+                                                children=[
+                                                    html.Div(
+                                                        children=[
+                                                            html.Div(
+                                                                className="panel-title",
+                                                                style={"marginBottom": "10px"},
+                                                                children="Ordine grafici",
+                                                            ),
+                                                            dcc.RadioItems(
+                                                                id="graph-order-radio",
+                                                                options=[
+                                                                    {"label": GRAPH_TITLES[g], "value": g}
+                                                                    for g in DEFAULT_GRAPH_ORDER
+                                                                ],
+                                                                value=DEFAULT_GRAPH_ORDER[0],
+                                                                labelStyle={"display": "block", "margin": "4px 0", "fontSize": "0.8rem"},
+                                                                inputStyle={"marginRight": "8px"},
+                                                                id="graph-order-label",
+                                                            ),
+                                                        ],
+                                                        style={"minWidth": "220px"},
+                                                    ),
+                                                    html.Div(
+                                                        style={"display": "flex", "flexDirection": "column", "gap": "6px", "paddingTop": "34px"},
+                                                        children=[
+                                                            html.Button(id="move-up-btn",   children="↑ Su",    n_clicks=0),
+                                                            html.Button(id="move-down-btn", children="↓ Giù",   n_clicks=0),
+                                                            html.Button(id="reset-graph-order-btn", children="⟳ Reset", n_clicks=0),
+                                                        ],
+                                                    ),
+                                                    html.Div(
+                                                        style={"display": "flex", "flexDirection": "column", "gap": "10px", "paddingTop": "34px"},
+                                                        children=[
+                                                            html.Button(id="print-btn", children="⎙  Stampa PDF", n_clicks=0),
+                                                            html.Div(id="graph-order-msg", className="status-msg"),
+                                                        ],
+                                                    ),
+                                                ],
+                                            ),
+                                            html.Div(id="print-trigger", style={"display": "none"}),
+                                            # grafici
+                                            dcc.Loading(
+                                                type="circle",
+                                                color="#e10600",
+                                                children=html.Div(
+                                                    id="graphs-container",
+                                                    style={"display": "flex", "flexDirection": "column", "gap": "10px"},
+                                                    children=[
+                                                        html.Div(
+                                                            className="graph-wrap",
+                                                            children=[
+                                                                html.Div(GRAPH_TITLES.get(gid, gid), className="graph-label"),
+                                                                dcc.Graph(id=gid, config={"displayModeBar": True, "displaylogo": False}),
+                                                            ],
+                                                        )
+                                                        for gid in DEFAULT_GRAPH_ORDER
+                                                    ],
                                                 ),
-                                            ],
-                                            style={"display": "flex", "flexDirection": "column", "gap": "6px"},
-                                        )
-                                        for graph_id in DEFAULT_GRAPH_ORDER
-                                    ],
-                                ),
-                            ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-all-laps",
-                        label="Confronto giri (2 piloti)",
-                        value="all-laps",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
-                                children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="all-laps-summary"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="all-laps-times-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="all-laps-delta-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(
-                                            id="all-laps-heatmap",
-                                            style={"width": "100%"},
-                                            config={"responsive": True},
-                                        ),
+                                            ),
+                                        ],
                                     ),
                                 ],
                             ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-strategy",
-                        label="Strategia gomme",
-                        value="strategy",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+
+                            # ── Tab: Confronto giri ──────────────
+                            dcc.Tab(
+                                id="tab-all-laps",
+                                label="Confronto giri",
+                                value="all-laps",
                                 children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="strategy-summary"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="stints-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="pitstop-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="degradation-graph"),
+                                    html.Div(
+                                        style={"paddingTop": "16px", "display": "flex", "flexDirection": "column", "gap": "10px"},
+                                        children=[
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="all-laps-summary",
+                                                                          className="panel", style={"minHeight": "40px"})),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="all-laps-times-graph",
+                                                                                             config={"displaylogo": False}))),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="all-laps-delta-graph",
+                                                                                             config={"displaylogo": False}))),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="all-laps-heatmap",
+                                                                                             style={"width": "100%"},
+                                                                                             config={"responsive": True, "displaylogo": False}))),
+                                        ],
                                     ),
                                 ],
                             ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-ranking",
-                        label="Classifica giri",
-                        value="ranking",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+
+                            # ── Tab: Strategia gomme ─────────────
+                            dcc.Tab(
+                                id="tab-strategy",
+                                label="Strategia gomme",
+                                value="strategy",
                                 children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="ranking-graph"),
+                                    html.Div(
+                                        style={"paddingTop": "16px", "display": "flex", "flexDirection": "column", "gap": "10px"},
+                                        children=[
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="strategy-summary",
+                                                                          className="panel", style={"minHeight": "40px"})),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="stints-graph", config={"displaylogo": False}))),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="pitstop-graph", config={"displaylogo": False}))),
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="degradation-graph", config={"displaylogo": False}))),
+                                        ],
                                     ),
                                 ],
                             ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-race-control-weather",
-                        label="Race Control + Meteo",
-                        value="race-control-weather",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+
+                            # ── Tab: Classifica giri ─────────────
+                            dcc.Tab(
+                                id="tab-ranking",
+                                label="Classifica giri",
+                                value="ranking",
                                 children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="race-control-weather-summary"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="weather-temperatures-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="weather-conditions-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="race-control-table"),
+                                    html.Div(
+                                        style={"paddingTop": "16px"},
+                                        children=[
+                                            html.Div(className="graph-wrap",
+                                                     children=dcc.Loading(type="circle", color="#e10600",
+                                                                          children=dcc.Graph(id="ranking-graph", config={"displaylogo": False}))),
+                                        ],
                                     ),
                                 ],
                             ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-overtakes-position",
-                        label="Overtakes + Position",
-                        value="overtakes-position",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "14px", "marginTop": "14px"},
+
+                            # ── Tab: Miglior giro per pilota ─────
+                            dcc.Tab(
+                                id="tab-best-laps",
+                                label="Miglior giro",
+                                value="best-laps",
                                 children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="overtakes-position-summary"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=dcc.Graph(id="position-timeline-graph"),
-                                    ),
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="overtakes-table"),
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                    dcc.Tab(
-                        id="tab-best-laps",
-                        label="Miglior giro per pilota",
-                        value="best-laps",
-                        children=[
-                            html.Div(
-                                style={"display": "flex", "flexDirection": "column", "gap": "12px", "marginTop": "14px"},
-                                children=[
-                                    dcc.Loading(
-                                        type="circle",
-                                        color="#555",
-                                        children=html.Div(id="best-laps-table"),
+                                    html.Div(
+                                        style={"paddingTop": "16px"},
+                                        children=[
+                                            dcc.Loading(type="circle", color="#e10600",
+                                                        children=html.Div(id="best-laps-table",
+                                                                          className="panel")),
+                                        ],
                                     ),
                                 ],
                             ),

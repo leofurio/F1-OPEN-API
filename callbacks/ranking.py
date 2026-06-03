@@ -4,28 +4,7 @@ from dash import Input, Output, State, callback
 
 from utils.i18n import t, LANG_DEFAULT
 from utils.telemetry import lap_duration_seconds_from_row
-
-
-def _empty_fig(title: str) -> go.Figure:
-    fig = go.Figure()
-    fig.update_layout(title=title, template="plotly_white")
-    return fig
-
-
-def _driver_label(num: int, df_drivers: pd.DataFrame) -> str:
-    if df_drivers.empty:
-        return f"Driver #{int(num)}"
-    row = df_drivers[df_drivers["driver_number"] == num]
-    if row.empty:
-        return f"Driver #{int(num)}"
-    row = row.iloc[0]
-    full_name = row.get("full_name") or row.get("name_acronym") or ""
-    team = row.get("team_name") or ""
-    if full_name and team:
-        return f"#{int(num)} - {full_name} ({team})"
-    if full_name:
-        return f"#{int(num)} - {full_name}"
-    return f"Driver #{int(num)}"
+from utils.helpers import driver_label as _driver_label, empty_fig as _empty_fig
 
 
 def _get_position(row: pd.Series):
@@ -121,7 +100,7 @@ def render_ranking(session_key, lang, laps_data, drivers_data):
         title=t(lang, "ranking_title"),
         xaxis_title="Lap",
         yaxis_title="Pos",
-        template="plotly_white",
+        template="f1dark",
         yaxis=dict(autorange="reversed", range=[max_pos + 0.5 if max_pos else None, 0.5]),
         legend=dict(title="", orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=60, r=20, t=80, b=60),

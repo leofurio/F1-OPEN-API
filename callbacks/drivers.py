@@ -1,10 +1,15 @@
+import logging
+
 import pandas as pd
 from dash import Input, Output, State, callback
 
 from api.openf1 import fetch_laps, fetch_drivers
 from utils.telemetry import fmt_duration, lap_duration_seconds_from_row
+from utils.helpers import driver_label as _driver_label
 from utils.i18n import t, LANG_DEFAULT
 from utils.security import sanitize_error_message
+
+logger = logging.getLogger(__name__)
 
 
 @callback(
@@ -34,26 +39,15 @@ def load_laps_and_drivers(session_key, lang):
 
     try:
         df_drivers = fetch_drivers(int(session_key))
-    except Exception:
+    except Exception as e:
+        logger.warning("Impossibile caricare i piloti per sessione %s: %s", session_key, e)
         df_drivers = pd.DataFrame()
 
     driver_numbers = sorted(df_laps["driver_number"].dropna().unique())
 
-    def driver_label(num: int) -> str:
-        if not df_drivers.empty:
-            row = df_drivers[df_drivers["driver_number"] == num]
-            if not row.empty:
-                row = row.iloc[0]
-                full_name = row.get("full_name") or row.get("name_acronym") or ""
-                team = row.get("team_name") or ""
-                if full_name and team:
-                    return f"#{int(num)} - {full_name} ({team})"
-                if full_name:
-                    return f"#{int(num)} - {full_name}"
-        return f"Driver #{int(num)}"
-
     driver_options = [
-        {"label": driver_label(int(d)), "value": int(d)} for d in driver_numbers
+        {"label": _driver_label(int(d), df_drivers), "value": int(d)}
+        for d in driver_numbers
     ]
 
     d1 = driver_numbers[0] if len(driver_numbers) > 0 else None
@@ -86,10 +80,8 @@ def load_laps_and_drivers(session_key, lang):
 def update_lap1_dropdown(driver1, laps_data):
     if not laps_data:
         return [], None
-
     df_laps = pd.DataFrame(laps_data)
-    lap_options, lap_value = _build_lap_options(df_laps, driver1)
-    return lap_options, lap_value
+    return _build_lap_options(df_laps, driver1)
 
 
 @callback(
@@ -100,10 +92,8 @@ def update_lap1_dropdown(driver1, laps_data):
 def update_lap2_dropdown(driver2, laps_data):
     if not laps_data:
         return [], None
-
     df_laps = pd.DataFrame(laps_data)
-    lap_options, lap_value = _build_lap_options(df_laps, driver2)
-    return lap_options, lap_value
+    return _build_lap_options(df_laps, driver2)
 
 
 def _build_lap_options(df_laps: pd.DataFrame, driver):
@@ -118,24 +108,17 @@ def _build_lap_options(df_laps: pd.DataFrame, driver):
         lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
         axis=1,
     )
-    best_lap_num = None
     valid = rows.dropna(subset=["dur_s"])
-    if not valid.empty:
-        best_lap_num = int(valid.loc[valid["dur_s"].idxmin()]["lap_number"])
+    best_lap_num = int(valid.loc[valid["dur_s"].idxmin()]["lap_number"]) if not valid.empty else None
 
     opts = []
     for _, r in rows.sort_values("lap_number").iterrows():
         lap_num = int(r["lap_number"])
-        dur_s = r.get("dur_s")
-        dur_label = fmt_duration(dur_s)
-        suffix = " (migliore)" if best_lap_num is not None and lap_num == best_lap_num else ""
-        label = f"Lap {lap_num} - {dur_label}{suffix}"
-        opts.append({"label": label, "value": lap_num})
-    # Preseleziona il miglior giro se disponibile, altrimenti il primo
-    if best_lap_num is not None:
-        val = best_lap_num
-    else:
-        val = opts[0]["value"] if opts else None
+        dur_label = fmt_duration(r.get("dur_s"))
+        suffix = " ★" if best_lap_num is not None and lap_num == best_lap_num else ""
+        opts.append({"label": f"Lap {lap_num}  {dur_label}{suffix}", "value": lap_num})
+
+    val = best_lap_num if best_lap_num is not None else (opts[0]["value"] if opts else None)
     return opts, val
 
 
@@ -154,41 +137,21 @@ def _build_lap_options(df_laps: pd.DataFrame, driver):
     ],
 )
 def show_fastest_lap(driver1, lap1, driver2, lap2, lang, laps_data, drivers_data):
-    """Mostra il miglior giro di sessione per i due piloti selezionati (indipendente dai giri scelti)."""
+    """Mostra il miglior giro di sessione per i due piloti selezionati."""
     lang = lang or LANG_DEFAULT
     if not laps_data:
         return ""
-
     if not driver1 or not driver2:
         return t(lang, "laps_select_two")
 
     df_laps = pd.DataFrame(laps_data)
     df_drivers = pd.DataFrame(drivers_data) if drivers_data else pd.DataFrame()
 
-    def driver_name(num: int) -> str:
-        if df_drivers.empty:
-            return f"Driver #{int(num)}"
-        row = df_drivers[df_drivers["driver_number"] == num]
-        if row.empty:
-            return f"Driver #{int(num)}"
-        row = row.iloc[0]
-        full_name = row.get("full_name") or row.get("name_acronym") or ""
-        team = row.get("team_name") or ""
-        if full_name and team:
-            return f"#{int(num)} - {full_name} ({team})"
-        if full_name:
-            return f"#{int(num)} - {full_name}"
-        return f"Driver #{int(num)}"
-
     def best_lap(driver_num):
-        """Ritorna (lap_number, durata_s) del miglior giro del driver nella sessione."""
         rows = df_laps[df_laps["driver_number"] == int(driver_num)].dropna(subset=["lap_number"]).copy()
         if rows.empty:
             return None
-        rows["dur_s"] = rows.apply(
-            lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()),
-            axis=1,
-        )
+        rows["dur_s"] = rows.apply(lambda r: lap_duration_seconds_from_row(r, pd.DataFrame()), axis=1)
         rows = rows.dropna(subset=["dur_s"])
         if rows.empty:
             return None
@@ -202,12 +165,9 @@ def show_fastest_lap(driver1, lap1, driver2, lap2, lang, laps_data, drivers_data
 
     lap1_num, dur1_s = best1
     lap2_num, dur2_s = best2
-
-    label1 = f"{driver_name(int(driver1))} - Lap {lap1_num}"
-    label2 = f"{driver_name(int(driver2))} - Lap {lap2_num}"
-
-    delta = abs(dur1_s - dur2_s)
-    delta_str = fmt_duration(delta)
+    label1 = f"{_driver_label(int(driver1), df_drivers)} — Lap {lap1_num}"
+    label2 = f"{_driver_label(int(driver2), df_drivers)} — Lap {lap2_num}"
+    delta_str = fmt_duration(abs(dur1_s - dur2_s))
 
     if abs(dur1_s - dur2_s) < 1e-3:
         return t(lang, "lap_fast_equal", lap1=label1, lap2=label2, time=fmt_duration(dur1_s))

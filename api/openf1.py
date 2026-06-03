@@ -1,4 +1,8 @@
 import logging
+import requests
+import pandas as pd
+from urllib.parse import urlencode
+from datetime import timedelta
 import time
 from datetime import timedelta
 from urllib.parse import urlencode
@@ -19,6 +23,8 @@ from config import (
 )
 from utils.cache import get_cache_key, load_from_cache, save_to_cache
 from utils.security import coerce_int
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -270,15 +276,24 @@ def fetch_car_data_for_lap(session_key: int, driver_number: int, lap_row: pd.Ser
     if not date_start or not date_end:
         return pd.DataFrame()
 
+    if not date_end:
+        start_dt = pd.to_datetime(date_start, errors="coerce", utc=True)
+        if pd.isna(start_dt):
+            return pd.DataFrame()
+        date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
+        logger.warning("date_end era None per driver %d, usando stima: %s", driver_number, date_end)
+
     params = {
         "session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY),
         "driver_number": coerce_int(driver_number, field_name="driver_number", minimum=1, maximum=MAX_DRIVER_NUMBER),
     }
     date_filter = f"date>{date_start}&date<{date_end}"
+    logger.debug("Query URL (car_data): %s/car_data?%s&%s", BASE_URL, urlencode(params), date_filter)
+
     data = _fetch_json("car_data", params=params, cache_suffix=date_filter)
 
     if not data:
-        logger.info("No car_data found for driver %s", driver_number)
+        logger.warning("Nessun car_data trovato per driver %d", driver_number)
         return pd.DataFrame()
 
     df = pd.DataFrame(data)
@@ -308,14 +323,23 @@ def fetch_location_for_lap(session_key: int, driver_number: int, lap_row: pd.Ser
     if not date_start or not date_end:
         return pd.DataFrame()
 
+    if not date_end:
+        start_dt = pd.to_datetime(date_start, errors="coerce", utc=True)
+        if pd.isna(start_dt):
+            return pd.DataFrame()
+        date_end = (start_dt + timedelta(minutes=DEFAULT_LAP_DURATION_MINUTES)).isoformat()
+        logger.warning("(location) date_end era None per driver %d, usando stima: %s", driver_number, date_end)
+
     params = {
         "session_key": coerce_int(session_key, field_name="session_key", minimum=1, maximum=MAX_SESSION_KEY),
         "driver_number": coerce_int(driver_number, field_name="driver_number", minimum=1, maximum=MAX_DRIVER_NUMBER),
     }
     date_filter = f"date>{date_start}&date<{date_end}"
+    logger.debug("Query URL (location): %s/location?%s&%s", BASE_URL, urlencode(params), date_filter)
+
     data = _fetch_json("location", params=params, cache_suffix=date_filter)
     if not data:
-        logger.info("No location found for driver %s", driver_number)
+        logger.warning("Nessun location trovato per driver %d", driver_number)
         return pd.DataFrame()
 
     df = pd.DataFrame(data)
