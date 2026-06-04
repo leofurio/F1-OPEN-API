@@ -30,6 +30,28 @@ python main.py
 ```
 - Demo live: https://f1-open-api-dashboard.onrender.com/
 
+
+## Deploy su Vercel
+Questa repo include gia un entrypoint serverless (`api/index.py`) e la configurazione `vercel.json` per eseguire Dash su Vercel.
+
+1) Installa la CLI Vercel, se non l'hai gia fatto:
+```bash
+npm i -g vercel
+```
+2) Dalla root del progetto esegui:
+```bash
+vercel
+```
+3) Per mandare in produzione:
+```bash
+vercel --prod
+```
+
+Note per Vercel:
+- `vercel.json` instrada tutte le richieste Dash verso la serverless function Python e lascia servire staticamente `assets/` e `images/`.
+- In locale la cache resta nella cartella `cache/`; su Vercel viene usata `/tmp/openf1-cache`, perche il filesystem della function e temporaneo. Puoi sovrascriverla con la variabile `OPENF1_CACHE_DIR`.
+- Se il primo caricamento e lento, e normale: la function serverless puo avere cold start e le chiamate a OpenF1 dipendono dalla disponibilita dell'API esterna.
+
 ## Lingue
 - Selettore in alto a destra: Italiano (default) o English.
 - Tradotti titoli, etichette, pulsanti e messaggi di stato/grafici principali tramite `utils/i18n.py` e callback `callbacks/i18n.py`.

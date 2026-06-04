@@ -1,11 +1,17 @@
 import json
 import logging
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = Path(__file__).parent.parent / "cache"
+DEFAULT_CACHE_DIR = (
+    Path("/tmp/openf1-cache")
+    if os.environ.get("VERCEL")
+    else Path(__file__).parent.parent / "cache"
+)
+CACHE_DIR = Path(os.environ.get("OPENF1_CACHE_DIR", DEFAULT_CACHE_DIR))
 CACHE_EXPIRY_HOURS = 6
 
 
