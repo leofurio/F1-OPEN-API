@@ -312,7 +312,8 @@ hr {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
   flex: 1;
-  overflow: hidden;
+  /* visibile per non tagliare la tendina dei dropdown quando si apre */
+  overflow: visible;
   transition: border-color .2s, box-shadow .2s, transform .2s;
 }
 
@@ -320,9 +321,13 @@ hr {
   content: '';
   position: absolute;
   inset: 0;
+  border-radius: var(--radius-sm);
   pointer-events: none;
   opacity: .5;
 }
+
+/* il pannello con la tendina aperta passa sopra i fratelli */
+.driver-panel:focus-within { z-index: 20; }
 
 .driver-panel-1 { border-left: 3px solid var(--accent); }
 .driver-panel-2 { border-left: 3px solid var(--accent2); }
